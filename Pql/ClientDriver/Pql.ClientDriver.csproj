@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{31FE8EC2-7BB4-4579-A960-43A760DD9AF9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Pql.ClientDriver</RootNamespace>
+    <AssemblyName>Pql.ClientDriver</AssemblyName>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>Bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Bin\Debug\Pql.ClientDriver.XML</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>Bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>Bin\Release\Pql.ClientDriver.XML</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\..\Infrastructure\Basic\RmsPlatformKeyPair.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.ServiceModel.Channels" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BufferedReaderStream.cs" />
+    <Compile Include="CommandWriter.cs" />
+    <Compile Include="ConnectionProps.cs" />
+    <Compile Include="PqlClientSecurityContext.cs" />
+    <Compile Include="IPqlClientSecurityContext.cs" />
+    <Compile Include="IPqlDbCommand.cs" />
+    <Compile Include="PqlDataCommandParameterCollection.cs" />
+    <Compile Include="Protocol\AuthContextSerializer.cs" />
+    <Compile Include="Protocol\BitVector.cs" />
+    <Compile Include="Protocol\DataRequestBulk.cs" />
+    <Compile Include="Protocol\DataRequest.cs" />
+    <Compile Include="Protocol\DataRequestParams.cs" />
+    <Compile Include="Protocol\ObjectPool.cs" />
+    <Compile Include="PqlDataCommandParameter.cs" />
+    <Compile Include="PqlDataProviderFactory.cs" />
+    <Compile Include="Protocol\PqlProtocolUtility.cs" />
+    <Compile Include="Wcf\IPqlDataWriter.cs" />
+    <Compile Include="Protocol\PqlErrorDataWriter.cs" />
+    <Compile Include="Wcf\PqlMessage.cs" />
+    <Compile Include="Wcf\PqlMessageEncoderFactory.cs" />
+    <Compile Include="Wcf\PqlMessageEncodingBindingElement.cs" />
+    <Compile Include="Protocol\IDataService.cs" />
+    <Compile Include="Protocol\DataResponseField.cs" />
+    <Compile Include="Protocol\DataResponse.cs" />
+    <Compile Include="PqlDataReader.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PqlDataCommand.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="PqlDataConnection.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="RowData.cs" />
+    <Compile Include="SizableArray.cs" />
+    <Compile Include="Wcf\PqlMessageEncodingElement.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
