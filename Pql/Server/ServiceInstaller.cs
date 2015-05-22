@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using Pql.Engine.Interfaces.Internal;
 using Pql.IntegrationStubs;
 
 namespace Pql.Server
@@ -9,8 +10,8 @@ namespace Pql.Server
     {
         public ServiceInstaller()
         {
-            serviceInstaller.Description = GetParamOrDefault("serviceDesc", "Pql Server");
-            serviceInstaller.DisplayName = GetParamOrDefault("serviceDisplayName", "Pql Server");
+            serviceInstaller.Description = GetParamOrDefault("serviceDesc", "PqlServer");
+            serviceInstaller.DisplayName = GetParamOrDefault("serviceDisplayName", "PqlServer");
             serviceInstaller.ServiceName = GetParamOrDefault("serviceName", "PQLSERVER");
             serviceInstaller.StartType = (System.ServiceProcess.ServiceStartMode)Enum.Parse(
                typeof(System.ServiceProcess.ServiceStartMode), GetParamOrDefault("serviceStartMode", "Automatic"));
@@ -25,11 +26,15 @@ namespace Pql.Server
 
         protected override void OnAfterInstall(System.Collections.IDictionary savedState)
         {
+            PerfCounters.Install();
+
             base.OnAfterInstall(savedState);
         }
 
         protected override void OnAfterUninstall(System.Collections.IDictionary savedState)
         {
+            PerfCounters.Remove();
+
             base.OnAfterUninstall(savedState);
         }
     }

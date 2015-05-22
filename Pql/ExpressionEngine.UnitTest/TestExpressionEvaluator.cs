@@ -27,7 +27,7 @@ namespace Pql.ExpressionEngine.UnitTest
         private static long s_totalOperations;
 
         [TestMethod]
-        [Ignore]
+        //[Ignore]
         public void TestDebug()
         {
             var s1 = "по-русски";
@@ -314,10 +314,10 @@ namespace Pql.ExpressionEngine.UnitTest
         class SomeItem
         {
             public long EtlAccountId;
-            public RealProperty[] RealPropertyData { get; set; }
+            public SomeContainer[] SomeContainerData { get; set; }
         }
 
-        class RealProperty
+        class SomeContainer
         {
             
         }
@@ -339,17 +339,17 @@ namespace Pql.ExpressionEngine.UnitTest
             data.EtlAccountId = 2;
             Assert.AreEqual(data.EtlAccountId, nestedEval(data));
 
-            var nestedEval2 = m_runtime.Compile<SomeItem, int>("@Context.RealPropertyData.Length");
-            data.RealPropertyData = new RealProperty[0];
-            Assert.AreEqual(data.RealPropertyData.Length, nestedEval2(data));
-            data.RealPropertyData = new RealProperty[10];
-            Assert.AreEqual(data.RealPropertyData.Length, nestedEval2(data));
+            var nestedEval2 = m_runtime.Compile<SomeItem, int>("@Context.SomeContainerData.Length");
+            data.SomeContainerData = new SomeContainer[0];
+            Assert.AreEqual(data.SomeContainerData.Length, nestedEval2(data));
+            data.SomeContainerData = new SomeContainer[10];
+            Assert.AreEqual(data.SomeContainerData.Length, nestedEval2(data));
 
-            nestedEval2 = m_runtime.Compile<SomeItem, int>("RealPropertyData.Length");
-            data.RealPropertyData = new RealProperty[0];
-            Assert.AreEqual(data.RealPropertyData.Length, nestedEval2(data));
-            data.RealPropertyData = new RealProperty[10];
-            Assert.AreEqual(data.RealPropertyData.Length, nestedEval2(data));
+            nestedEval2 = m_runtime.Compile<SomeItem, int>("SomeContainerData.Length");
+            data.SomeContainerData = new SomeContainer[0];
+            Assert.AreEqual(data.SomeContainerData.Length, nestedEval2(data));
+            data.SomeContainerData = new SomeContainer[10];
+            Assert.AreEqual(data.SomeContainerData.Length, nestedEval2(data));
         }
 
         [TestMethod]
@@ -504,7 +504,7 @@ namespace Pql.ExpressionEngine.UnitTest
                 new Tuple<string, Type>("@arg1", typeof(long)),
                 new Tuple<string, Type>("@arg2", typeof(long)));
             
-            Assert.AreEqual(1 + 2, add(1, 2));
+            Assert.AreEqual(1L + 2L, add(1L, 2L));
 
             var concat = (Func<string, long, string>) 
                 m_runtime.Compile("@Arg1 + Convert(@Arg2, 'string')",
@@ -512,7 +512,7 @@ namespace Pql.ExpressionEngine.UnitTest
                 new Tuple<string, Type>("@arg1", typeof(string)),
                 new Tuple<string, Type>("@arg2", typeof(long)));
             
-            Assert.AreEqual("1" + 2, concat("1", 2));
+            Assert.AreEqual("1" + 2L, concat("1", 2L));
         }
         
         [TestMethod]

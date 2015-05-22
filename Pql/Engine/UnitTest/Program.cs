@@ -50,7 +50,7 @@ namespace Pql.Engine.UnitTest
                 test.InitializeEmbeddedServer();
 
                 // warm-up
-                RunMultithreaded(test, 8, 1, 1000000, DemoDataGenAction);
+                RunMultithreaded(test, 8, 1, 100000, DemoDataGenAction);
 
                 test.FlushDriverToStore();
             }
