@@ -39,7 +39,7 @@ namespace Pql.ExpressionEngine.UnitTest
             //var processor = m_runtime.Compile<bool>("EndsWith('abcd', 'cd')");
             Assert.IsTrue(processor(1.4f));
 
-            var numPerThread = 1000000;
+            var numPerThread = 10000;
             var numThreads = 4;
             var start = new ManualResetEventSlim(false);
             var stop = new Semaphore(0, numThreads);
