@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -112,7 +113,7 @@ namespace Pql.ExpressionEngine.Compiler
 
             var arg2Node = root.RequireChild(null, 1, 0, 1);
             var ifnull = state.ParentRuntime.Analyze(arg2Node, state);
-            
+
             if (!ExpressionTreeExtensions.TryAdjustVoid(ref argument, ref ifnull))
             {
                 throw new CompilationException("Could not adjust void blocks", root);
@@ -128,8 +129,8 @@ namespace Pql.ExpressionEngine.Compiler
             Expression result;
             if (argument.Type.IsValueType)
             {
-                result = isnullableType 
-                    ? Expression.Condition(Expression.Field(argument, "HasValue"), Expression.Field(argument, "Value"), ifnull) 
+                result = isnullableType
+                    ? Expression.Condition(Expression.Field(argument, "HasValue"), Expression.Field(argument, "Value"), ifnull)
                     : argument;
             }
             else
@@ -193,12 +194,12 @@ namespace Pql.ExpressionEngine.Compiler
             {
                 if (value is ConstantExpression)
                 {
-                    return Expression.Constant(string.IsNullOrEmpty((string)((ConstantExpression) value).Value), typeof(Boolean));
+                    return Expression.Constant(string.IsNullOrEmpty((string)((ConstantExpression)value).Value), typeof(Boolean));
                 }
 
                 return Expression.Call(ReflectionHelper.StringIsNullOrEmpty, value);
             }
-            
+
             return ConstantHelper.TryEvalConst(root, value, Expression.Default(value.Type), ExpressionType.Equal);
         }
 
@@ -215,7 +216,7 @@ namespace Pql.ExpressionEngine.Compiler
             if (ReferenceEquals(value.Type, typeof(Double)))
             {
                 return constExpr != null
-                           ? (Expression)Expression.Constant(Double.IsNaN((Double) constExpr.Value))
+                           ? (Expression)Expression.Constant(Double.IsNaN((Double)constExpr.Value))
                            : Expression.Call(ReflectionHelper.DoubleIsNaN, value);
             }
 
@@ -225,7 +226,7 @@ namespace Pql.ExpressionEngine.Compiler
                            ? (Expression)Expression.Constant(Single.IsNaN((Single)constExpr.Value))
                            : Expression.Call(ReflectionHelper.SingleIsNaN, value);
             }
-            
+
             throw new CompilationException("IsNaN requires argument of type Single or Double. Actual: " + value.Type.FullName, arg1Node);
         }
 
@@ -242,7 +243,7 @@ namespace Pql.ExpressionEngine.Compiler
             if (ReferenceEquals(value.Type, typeof(Double)))
             {
                 return constExpr != null
-                           ? (Expression)Expression.Constant(Double.IsInfinity((Double) constExpr.Value))
+                           ? (Expression)Expression.Constant(Double.IsInfinity((Double)constExpr.Value))
                            : Expression.Call(ReflectionHelper.DoubleIsInfinity, value);
             }
 
@@ -252,7 +253,7 @@ namespace Pql.ExpressionEngine.Compiler
                            ? (Expression)Expression.Constant(Single.IsInfinity((Single)constExpr.Value))
                            : Expression.Call(ReflectionHelper.SingleIsInfinity, value);
             }
-            
+
             throw new CompilationException("IsInfinity requires argument of type Single or Double. Actual: " + value.Type.FullName, arg1Node);
         }
 
@@ -309,13 +310,13 @@ namespace Pql.ExpressionEngine.Compiler
 
             if (!ReferenceEquals(constValue, null) && !ReferenceEquals(constPattern, null))
             {
-                return constValue.Value == null || constPattern.Value == null 
+                return constValue.Value == null || constPattern.Value == null
                     ? Expression.Constant(false)
                     : ConstantHelper.TryEvalConst(root, method, constValue, constPattern, Expression.Constant(StringComparison.OrdinalIgnoreCase));
             }
 
             Expression target = Expression.Call(value, method, pattern, Expression.Constant(StringComparison.OrdinalIgnoreCase));
-            if (target.Type == typeof (Int32))
+            if (target.Type == typeof(Int32))
             {
                 target = Expression.GreaterThanOrEqual(target, Expression.Constant(0, target.Type));
             }
@@ -337,6 +338,11 @@ namespace Pql.ExpressionEngine.Compiler
             var arg2Node = root.RequireChild("string", 1, 0, 1);
             var targetType = RequireSystemType(arg2Node);
 
+            return PredefinedAtom_Convert_SingleValue(root, value, arg2Node, targetType);
+        }
+
+        private static Expression PredefinedAtom_Convert_SingleValue(ParseTreeNode root, Expression value, ParseTreeNode arg2Node, Type targetType)
+        {
             // maybe we don't have to change type, or simply cast the numeric type?
             if (ExpressionTreeExtensions.TryAdjustReturnType(root, value, targetType, out var adjusted))
             {
@@ -378,7 +384,7 @@ namespace Pql.ExpressionEngine.Compiler
             // seems like cast does not apply, let's use converter
             try
             {
-                var convertMethod = ReflectionHelper.GetOrAddMethod1(typeof (Convert), "To" + targetType.Name, value.Type);
+                var convertMethod = ReflectionHelper.GetOrAddMethod1(typeof(Convert), "To" + targetType.Name, value.Type);
                 return ConstantHelper.TryEvalConst(root, convertMethod, value);
             }
             catch
@@ -415,7 +421,7 @@ namespace Pql.ExpressionEngine.Compiler
             {
                 var args = new Expression[argNodes.ChildNodes.Count];
                 var typeArray = new Type[args.Length];
-                var typeInt32 = typeof (Int32);
+                var typeInt32 = typeof(Int32);
                 for (var i = 0; i < args.Length; i++)
                 {
                     var node = argNodes.RequireChild(null, i);
@@ -424,14 +430,14 @@ namespace Pql.ExpressionEngine.Compiler
                     typeArray[i] = typeInt32;
                 }
 
-                var ctr = typeof (DateTime).GetConstructor(typeArray);
+                var ctr = typeof(DateTime).GetConstructor(typeArray);
                 if (ctr == null)
                 {
                     throw new Exception(string.Format("Could not locate datetime constructor with {0} int arguments", typeArray.Length));
                 }
                 return ConstantHelper.TryEvalConst(root, ctr, args);
             }
-            
+
             if (argNodes.ChildNodes.Count == 2)
             {
                 var arg1Node = root.RequireChild(null, 1, 0, 0);
@@ -442,7 +448,7 @@ namespace Pql.ExpressionEngine.Compiler
                 var formatString = state.ParentRuntime.Analyze(arg2Node, state).RemoveNullability();
                 formatString.RequireString(arg2Node);
 
-                return ConstantHelper.TryEvalConst(root, ReflectionHelper.DateTimeParseExact, 
+                return ConstantHelper.TryEvalConst(root, ReflectionHelper.DateTimeParseExact,
                     valueString, formatString, Expression.Constant(null, typeof(IFormatProvider)));
             }
 
@@ -452,7 +458,7 @@ namespace Pql.ExpressionEngine.Compiler
                 var value = state.ParentRuntime.Analyze(arg1Node, state).RemoveNullability();
                 value.RequireInteger(arg1Node);
 
-                var dateTimeFromBinary = ReflectionHelper.GetOrAddMethod1(typeof (DateTime), "FromBinary", typeof (Int64));
+                var dateTimeFromBinary = ReflectionHelper.GetOrAddMethod1(typeof(DateTime), "FromBinary", typeof(Int64));
                 return ConstantHelper.TryEvalConst(root, dateTimeFromBinary, value);
             }
 
@@ -464,10 +470,10 @@ namespace Pql.ExpressionEngine.Compiler
             Type targetType;
             try
             {
-                var targetTypeName = argNode.Token.ValueString; 
+                var targetTypeName = argNode.Token.ValueString;
                 if (0 == StringComparer.OrdinalIgnoreCase.Compare(targetTypeName, "Binary"))
                 {
-                    return typeof (SizableArrayOfByte);
+                    return typeof(SizableArrayOfByte);
                 }
                 targetType = Type.GetType("System." + targetTypeName, false, true);
             }
@@ -475,7 +481,7 @@ namespace Pql.ExpressionEngine.Compiler
             {
                 throw new CompilationException("Could not find target type by name because of error: " + e.Message, argNode);
             }
-            
+
             if (targetType == null)
             {
                 throw new CompilationException("Could not find target type by name: " + argNode, argNode);
