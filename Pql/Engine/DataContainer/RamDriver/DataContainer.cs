@@ -23,22 +23,13 @@ namespace Pql.Engine.DataContainer.RamDriver
 
         public DataContainer(ITracer tracer, DataContainerDescriptor dataContainerDescriptor, string storageRoot)
         {
-            if (tracer == null)
-            {
-                throw new ArgumentNullException("tracer");
-            }
-
-            if (dataContainerDescriptor == null)
-            {
-                throw new ArgumentNullException("dataContainerDescriptor");
-            }
 
             // intentionally allowed to be null - in case if we don't want to use any persistence
             m_storageRoot = storageRoot;
-            m_tracer = tracer;
+            m_tracer = tracer ?? throw new ArgumentNullException("tracer");
             m_memoryPool = new DynamicMemoryPool();
 
-            m_dataContainerDescriptor = dataContainerDescriptor;
+            m_dataContainerDescriptor = dataContainerDescriptor ?? throw new ArgumentNullException("dataContainerDescriptor");
             m_documentDataContainers = new Dictionary<int, DocumentDataContainer>(50);
             m_documentDataContainerLocks = new Dictionary<int, object>(50);
 
@@ -50,8 +41,7 @@ namespace Pql.Engine.DataContainer.RamDriver
 
         public DocumentDataContainer RequireDocumentContainer(int docType)
         {
-            DocumentDataContainer docStore;
-            if (m_documentDataContainers.TryGetValue(docType, out docStore))
+            if (m_documentDataContainers.TryGetValue(docType, out var docStore))
             {
                 return docStore;
             }

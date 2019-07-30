@@ -12,12 +12,7 @@ namespace Pql.Engine.Interfaces.Internal
 
         public QueryPreprocessor(DataContainerDescriptor containerDescriptor)
         {
-            if (containerDescriptor == null)
-            {
-                throw new ArgumentNullException("containerDescriptor");
-            }
-
-            m_containerDescriptor = containerDescriptor;
+            m_containerDescriptor = containerDescriptor ?? throw new ArgumentNullException("containerDescriptor");
             m_identifierAliasParts = new ConcurrentDictionary<string, ParseTreeNode>(StringComparer.OrdinalIgnoreCase);
         }
 
@@ -50,8 +45,7 @@ namespace Pql.Engine.Interfaces.Internal
             // then keep trimming tail until buffer is empty or we find some alias
             while (ctx.Buffer.Count > 0)
             {
-                string[] mapped;
-                if (ctx.TargetEntity.TryGetIdentifierAlias(ctx.Buffer, out mapped))
+                if (ctx.TargetEntity.TryGetIdentifierAlias(ctx.Buffer, out var mapped))
                 {
                     // replace content of this identifier with pre-cached parts
                     node.ChildNodes.Clear();
@@ -71,8 +65,7 @@ namespace Pql.Engine.Interfaces.Internal
 
         private static ParseTreeNode GetCachedIdentifierAliasPart(string part, ConcurrentDictionary<string, ParseTreeNode> identifierAliasParts)
         {
-            ParseTreeNode result;
-            if (identifierAliasParts.TryGetValue(part, out result))
+            if (identifierAliasParts.TryGetValue(part, out var result))
             {
                 return result;
             }

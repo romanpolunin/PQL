@@ -19,13 +19,8 @@ namespace Pql.Engine.Interfaces.Services
                 throw new ArgumentNullException("version");
             }
 
-            if (stats == null)
-            {
-                throw new ArgumentNullException("stats");
-            }
-
             DriverVersion = version.ToString();
-            DataContainerStats = stats;
+            DataContainerStats = stats ?? throw new ArgumentNullException("stats");
         }
     }
 }

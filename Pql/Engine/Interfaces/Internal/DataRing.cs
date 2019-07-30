@@ -152,8 +152,7 @@ namespace Pql.Engine.Interfaces.Internal
             
             if (ready != null && !ready.IsCompleted)
             {
-                T item;
-                while (ready.TryTake(out item))
+                while (ready.TryTake(out var item))
                     ;
 
                 ready.Dispose();
@@ -161,8 +160,7 @@ namespace Pql.Engine.Interfaces.Internal
 
             if (completed != null && !completed.IsCompleted)
             {
-                T item;
-                while (completed.TryTake(out item))
+                while (completed.TryTake(out var item))
                     ;
 
                 completed.Dispose();

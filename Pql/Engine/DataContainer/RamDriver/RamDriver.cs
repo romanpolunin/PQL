@@ -154,12 +154,7 @@ namespace Pql.Engine.DataContainer.RamDriver
                 throw new InvalidOperationException("Already initialized");
             }
 
-            if (tracer == null)
-            {
-                throw new ArgumentNullException("tracer");
-            }
-
-            m_tracer = tracer;
+            m_tracer = tracer ?? throw new ArgumentNullException("tracer");
             if (m_tracer.IsDebugEnabled)
             {
                 m_tracer.Debug(string.Concat("Initializing RAM storage driver for settings string: ", settings));
@@ -443,8 +438,7 @@ namespace Pql.Engine.DataContainer.RamDriver
 
         private void InsertOne(RamDriverChangeset changesetRec)
         {
-            int docIndex;
-            changesetRec.DocumentContainer.TryAddDocument(changesetRec.ChangeBuffer.InternalEntityId, out docIndex);
+            changesetRec.DocumentContainer.TryAddDocument(changesetRec.ChangeBuffer.InternalEntityId, out var docIndex);
             UpdateAtPosition(changesetRec, changesetRec.ChangeBuffer, docIndex);
         }
 
@@ -488,12 +482,11 @@ namespace Pql.Engine.DataContainer.RamDriver
         {
             CheckInitialized();
 
-            RamDriverChangeset changesetRec;
-            if (!m_changesets.TryRemove(changeset, out changesetRec))
+            if (!m_changesets.TryRemove(changeset, out var changesetRec))
             {
                 throw new ArgumentException("Invalid changeset handle: " + changeset, "changeset");
             }
-            
+
             try
             {
                 InvalidateIndexes(changesetRec);
@@ -527,9 +520,8 @@ namespace Pql.Engine.DataContainer.RamDriver
         {
             CheckInitialized();
 
-            RamDriverChangeset changesetRec;
-            
-            if (m_changesets.TryRemove(changeset, out changesetRec))
+
+            if (m_changesets.TryRemove(changeset, out var changesetRec))
             {
                 try
                 {
@@ -672,26 +664,11 @@ namespace Pql.Engine.DataContainer.RamDriver
         /// </summary>
         public RamDriverChangeset(RamDriver driver, DriverChangeBuffer changeBuffer, bool isBulk, DocumentDataContainer documentContainer, ColumnDataBase[] columnStores)
         {
-            if (driver == null)
-            {
-                throw new ArgumentNullException("driver");
-            }
-
-            if (changeBuffer == null)
-            {
-                throw new ArgumentNullException("changeBuffer");
-            }
-
-            if (documentContainer == null)
-            {
-                throw new ArgumentNullException("documentContainer");
-            }
-
-            Driver = driver;
-            ChangeBuffer = changeBuffer;
+            Driver = driver ?? throw new ArgumentNullException("driver");
+            ChangeBuffer = changeBuffer ?? throw new ArgumentNullException("changeBuffer");
             IsBulk = isBulk;
             ColumnStores = columnStores;
-            DocumentContainer = documentContainer;
+            DocumentContainer = documentContainer ?? throw new ArgumentNullException("documentContainer");
         }
     }
 }

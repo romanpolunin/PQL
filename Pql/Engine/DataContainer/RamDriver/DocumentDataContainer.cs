@@ -67,31 +67,11 @@ namespace Pql.Engine.DataContainer.RamDriver
             IUnmanagedAllocator allocator,
             ITracer tracer)
         {
-            if (tracer == null)
-            {
-                throw new ArgumentNullException("tracer");
-            }
+            m_logger = tracer ?? throw new ArgumentNullException("tracer");
 
-            if (dataContainerDescriptor == null)
-            {
-                throw new ArgumentNullException("dataContainerDescriptor");
-            }
-
-            if (documentTypeDescriptor == null)
-            {
-                throw new ArgumentNullException("documentTypeDescriptor");
-            }
-
-            if (allocator == null)
-            {
-                throw new ArgumentNullException("allocator");
-            }
-
-            m_logger = tracer;
-
-            m_allocator = allocator;
-            DocDesc = documentTypeDescriptor;
-            DataContainerDescriptor = dataContainerDescriptor;
+            m_allocator = allocator ?? throw new ArgumentNullException("allocator");
+            DocDesc = documentTypeDescriptor ?? throw new ArgumentNullException("documentTypeDescriptor");
+            DataContainerDescriptor = dataContainerDescriptor ?? throw new ArgumentNullException("dataContainerDescriptor");
 
             ColumnStores = new ColumnDataBase[DocDesc.Fields.Length];
             DocumentKeys = new ExpandableArrayOfKeys(m_allocator);

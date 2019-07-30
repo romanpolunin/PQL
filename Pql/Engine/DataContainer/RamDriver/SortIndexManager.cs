@@ -13,12 +13,7 @@ namespace Pql.Engine.DataContainer.RamDriver
 
         public SortIndexManager(DocumentDataContainer documentStore)
         {
-            if (documentStore == null)
-            {
-                throw new ArgumentNullException("documentStore");
-            }
-
-            m_documentStore = documentStore;
+            m_documentStore = documentStore ?? throw new ArgumentNullException("documentStore");
             m_fieldIdToIndexHandle = new ConcurrentDictionary<int, int>();
             
             if (m_documentStore.FieldIdToColumnStore.Count != m_documentStore.DocDesc.Fields.Length)
@@ -37,8 +32,7 @@ namespace Pql.Engine.DataContainer.RamDriver
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void InvalidateIndex(int fieldId)
         {
-            int handle;
-            if (m_fieldIdToIndexHandle.TryGetValue(fieldId, out handle))
+            if (m_fieldIdToIndexHandle.TryGetValue(fieldId, out var handle))
             {
                 m_fieldIndexes[handle].Invalidate();
             }

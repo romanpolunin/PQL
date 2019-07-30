@@ -13,6 +13,7 @@ using Pql.Engine.DataContainer;
 using Pql.Engine.DataContainer.Engine;
 using Pql.Engine.DataContainer.RamDriver;
 using Pql.IntegrationStubs;
+using StructureMap;
 
 namespace Pql.Engine.UnitTest
 {
@@ -34,8 +35,11 @@ namespace Pql.Engine.UnitTest
 
         public RamDriver StorageDriver { get; set; }
 
+        public IContainer Container { get; set; }
+
         public TestServiceContainer()
         {
+            Container = new Container();
             StorageDriver = new RamDriver();
             StorageDriver.Initialize(
                 new DummyTracer(),
@@ -54,6 +58,7 @@ namespace Pql.Engine.UnitTest
                 ServiceInstanceName + "-Engine", maxconcurrency, StorageDriver, StorageDriver.GetDescriptor());
             EngineCache = new TestableEngineCache(Engine);
             DataService = new DataService(
+                Container,
                 new DummyTracer(), 
                 new DummyHostedProcess(), ServiceInstanceName, maxconcurrency, EngineCache);
             DataServiceHost = CreateServiceHost(DataService, new[]

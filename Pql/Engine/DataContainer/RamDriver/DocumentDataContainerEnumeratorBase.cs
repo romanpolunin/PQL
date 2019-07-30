@@ -86,16 +86,6 @@ namespace Pql.Engine.DataContainer.RamDriver
                 throw new ArgumentOutOfRangeException("untrimmedCount", untrimmedCount, "Untrimmed count cannot be negative");
             }
 
-            if (rowData == null)
-            {
-                throw new ArgumentNullException("rowData");
-            }
-
-            if (dataContainer == null)
-            {
-                throw new ArgumentNullException("dataContainer");
-            }
-
             if (fields == null)
             {
                 throw new ArgumentNullException("fields");
@@ -108,8 +98,8 @@ namespace Pql.Engine.DataContainer.RamDriver
 
             Position = -1;
             UntrimmedCount = untrimmedCount;
-            RowData = rowData;
-            DataContainer = dataContainer;
+            RowData = rowData ?? throw new ArgumentNullException("rowData");
+            DataContainer = dataContainer ?? throw new ArgumentNullException("dataContainer");
             Fields = fields;
             CountOfMainFields = countOfMainFields;
 

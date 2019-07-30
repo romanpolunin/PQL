@@ -12,6 +12,7 @@ using Pql.Engine.DataContainer;
 using Pql.Engine.Interfaces;
 using Pql.Engine.Interfaces.Internal;
 using Pql.IntegrationStubs;
+using StructureMap;
 
 namespace Pql.Server
 {
@@ -22,6 +23,12 @@ namespace Pql.Server
         private ServiceHost m_serviceHost;
         private string m_instanceName;
         private DataService m_singletonServiceInstance;
+        private readonly IContainer m_container;
+
+        public DataServerProcess(IContainer container)
+        {
+            m_container = container ?? throw new ArgumentNullException(nameof(container));
+        }
 
         public void Dispose()
         {
@@ -106,7 +113,7 @@ namespace Pql.Server
             var maxPending = Environment.ProcessorCount * 16;
 
             m_singletonServiceInstance = new DataService(
-                m_host.GetTracer(typeof(DataService)), this, tcpBaseAddress.Authority + ", " + m_instanceName, maxConcurrency, null);
+                m_container, m_host.GetTracer(typeof(DataService)), this, tcpBaseAddress.Authority + ", " + m_instanceName, maxConcurrency, null);
 
             var serviceHost = CreateServiceHost(m_singletonServiceInstance, new[] { tcpBaseAddress, httpBaseAddress }, maxConcurrency, maxPending);
             serviceHost.Open();

@@ -37,11 +37,6 @@ namespace Pql.Engine.Interfaces.Internal
 
         public JoinDescriptor(int documentType, Type classType, Dictionary<string, int> joinPropertyNameToDocumentType)
         {
-            if (classType == null)
-            {
-                throw new ArgumentNullException("classType");
-            }
-
             if (documentType < 0)
             {
                 throw new ArgumentException("Invalid document type", "documentType");
@@ -58,7 +53,7 @@ namespace Pql.Engine.Interfaces.Internal
             }
 
             DocumentType = documentType;
-            JoinClassType = classType;
+            JoinClassType = classType ?? throw new ArgumentNullException("classType");
             JoinPropertyNameToDocumentType = joinPropertyNameToDocumentType;
         }
 

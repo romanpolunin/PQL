@@ -27,31 +27,16 @@ namespace Pql.Engine.DataContainer.Engine
 
         public DataEngine(ITracer tracer, string instanceName, int maxConcurrency, IStorageDriver storageDriver, DataContainerDescriptor containerDescriptor)
         {
-            if (tracer == null)
-            {
-                throw new ArgumentNullException("tracer");
-            }
-
             if (maxConcurrency <= 0 || maxConcurrency > 10000)
             {
                 throw new ArgumentOutOfRangeException("maxConcurrency");
             }
 
-            if (storageDriver == null)
-            {
-                throw new ArgumentNullException("storageDriver");
-            }
-
-            if (containerDescriptor == null)
-            {
-                throw new ArgumentNullException("containerDescriptor");
-            }
-
-            m_tracer = tracer;
-            m_containerDescriptor = containerDescriptor;
+            m_tracer = tracer ?? throw new ArgumentNullException("tracer");
+            m_containerDescriptor = containerDescriptor ?? throw new ArgumentNullException("containerDescriptor");
             m_maxConcurrency = maxConcurrency;
             m_parsedRequestCache = new ParsedRequestCache(instanceName);
-            m_storageDriver = storageDriver;
+            m_storageDriver = storageDriver ?? throw new ArgumentNullException("storageDriver");
             m_parser = new QueryParser(containerDescriptor, maxConcurrency);
             m_activeProcessors = new ConcurrentDictionary<RequestExecutionContext, Task>(m_maxConcurrency, m_maxConcurrency);
             m_utcLastUsedAt = DateTime.UtcNow;
@@ -594,8 +579,7 @@ namespace Pql.Engine.DataContainer.Engine
             var processors = m_activeProcessors;
             if (processors != null)
             {
-                Task task;
-                if (processors.TryRemove(context, out task) && waitForProducerThread && !task.IsCompleted)
+                if (processors.TryRemove(context, out var task) && waitForProducerThread && !task.IsCompleted)
                 {
                     task.Wait();
                 }

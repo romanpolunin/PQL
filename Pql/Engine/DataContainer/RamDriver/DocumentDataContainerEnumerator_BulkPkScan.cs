@@ -43,12 +43,7 @@ namespace Pql.Engine.DataContainer.RamDriver
             :
                 base(untrimmedCount, rowData, dataContainer, fields, fields.Count - 1)
         {
-            if (inputDataEnumerator == null)
-            {
-                throw new ArgumentNullException("inputDataEnumerator");
-            }
-
-            m_inputEnumerator = inputDataEnumerator;
+            m_inputEnumerator = inputDataEnumerator ?? throw new ArgumentNullException("inputDataEnumerator");
             
             ReadStructureAndTakeLocks();
         }

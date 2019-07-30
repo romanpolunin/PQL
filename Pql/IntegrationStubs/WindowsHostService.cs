@@ -11,14 +11,16 @@ namespace Pql.IntegrationStubs
     internal partial class WindowsHostService : ServiceBase, IHostingService
     {
         private readonly ITracer m_tracer;
+        private readonly IContainer m_container;
         private IHostedProcess[] m_hostedInstances;
         private long m_haveToStop;
 
-        public WindowsHostService()
+        public WindowsHostService(IContainer container)
         {
             InitializeComponent();
 
             m_tracer = new DummyTracer();
+            m_container = container ?? throw new ArgumentNullException(nameof(container));
         }
 
         protected override void OnStart(string[] args)
@@ -30,7 +32,7 @@ namespace Pql.IntegrationStubs
 
             m_tracer.Info("Resolving process implementations...");
 
-            m_hostedInstances = ObjectFactory.GetAllInstances<IHostedProcess>().ToArray();
+            m_hostedInstances = m_container.GetAllInstances<IHostedProcess>().ToArray();
             if (m_hostedInstances == null || m_hostedInstances.Length == 0)
             {
                 throw new Exception("Could not resolve any implementations of " + typeof(IHostedProcess).FullName);

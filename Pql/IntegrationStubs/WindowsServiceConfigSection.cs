@@ -4,7 +4,7 @@ namespace Pql.IntegrationStubs
 {
     public class WindowsServiceConfigSection : ConfigurationSection
     {
-        [ConfigurationProperty("windowsServiceName", DefaultValue = "ThinksmartServiceHost", IsRequired = false)]
+        [ConfigurationProperty("windowsServiceName", DefaultValue = "mycompanyServiceHost", IsRequired = false)]
         [StringValidator(InvalidCharacters = " ~!@#$%^&*()[]{}/;'\"|\\", MinLength = 5, MaxLength = 100)]
         public string WindowsServiceName
         {
@@ -18,7 +18,7 @@ namespace Pql.IntegrationStubs
             }
         }
 
-        [ConfigurationProperty("windowsServiceDisplayName", DefaultValue = "ThinksmartServiceHost", IsRequired = false)]
+        [ConfigurationProperty("windowsServiceDisplayName", DefaultValue = "mycompanyServiceHost", IsRequired = false)]
         [StringValidator(InvalidCharacters = "~!@#$%^&*()[]{}/;'\"|\\", MinLength = 5, MaxLength = 100)]
         public string WindowsServiceDisplayName
         {
@@ -32,7 +32,7 @@ namespace Pql.IntegrationStubs
             }
         }
 
-        [ConfigurationProperty("windowsServiceDescription", DefaultValue = "ThinksmartServiceHost", IsRequired = false)]
+        [ConfigurationProperty("windowsServiceDescription", DefaultValue = "mycompanyServiceHost", IsRequired = false)]
         [StringValidator(InvalidCharacters = "~!@#$%^&*()[]{}/;'\"|\\", MinLength = 5, MaxLength = 100)]
         public string WindowsServiceDescription
         {

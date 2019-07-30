@@ -47,11 +47,6 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <param name="args">Ordered list of types of arguments</param>
         public CompilerState(IExpressionEvaluatorRuntime parentRuntime, Type contextType, Type returnType, params Tuple<string, Type>[] args)
         {
-            if (parentRuntime == null)
-            {
-                throw new ArgumentNullException("parentRuntime");
-            }
-
             var arguments = new List<ParameterExpression>();
 
             if (contextType != null)
@@ -80,7 +75,7 @@ namespace Pql.ExpressionEngine.Interfaces
                 }
             }
 
-            ParentRuntime = parentRuntime;
+            ParentRuntime = parentRuntime ?? throw new ArgumentNullException("parentRuntime");
             ReturnType = returnType;
             Arguments = arguments;
         }

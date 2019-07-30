@@ -1,10 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.156
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pql.ExpressionEngine", "ExpressionEngine\Pql.ExpressionEngine.csproj", "{D1396937-82A0-4CAB-9365-30476DB96CAF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pql.ExpressionEngine.UnitTest", "ExpressionEngine.UnitTest\Pql.ExpressionEngine.UnitTest.csproj", "{5F405051-2E5E-4D82-A8C9-B5291B781041}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pql.ClientDriver", "ClientDriver\Pql.ClientDriver.csproj", "{31FE8EC2-7BB4-4579-A960-43A760DD9AF9}"
@@ -21,16 +19,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pql.IntegrationStubs", "Int
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pql.Server.UnitTest", "Server.UnitTest\Pql.Server.UnitTest.csproj", "{2F23E597-A662-4A61-A44E-F160C913DFC7}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pql.ExpressionEngine", "ExpressionEngine\Pql.ExpressionEngine.csproj", "{AB2A90DB-2922-46DA-92BD-E9480B8C1BB7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D1396937-82A0-4CAB-9365-30476DB96CAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D1396937-82A0-4CAB-9365-30476DB96CAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D1396937-82A0-4CAB-9365-30476DB96CAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D1396937-82A0-4CAB-9365-30476DB96CAF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5F405051-2E5E-4D82-A8C9-B5291B781041}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5F405051-2E5E-4D82-A8C9-B5291B781041}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F405051-2E5E-4D82-A8C9-B5291B781041}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -63,8 +59,15 @@ Global
 		{2F23E597-A662-4A61-A44E-F160C913DFC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2F23E597-A662-4A61-A44E-F160C913DFC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2F23E597-A662-4A61-A44E-F160C913DFC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB2A90DB-2922-46DA-92BD-E9480B8C1BB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB2A90DB-2922-46DA-92BD-E9480B8C1BB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB2A90DB-2922-46DA-92BD-E9480B8C1BB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB2A90DB-2922-46DA-92BD-E9480B8C1BB7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B246C408-54B5-4FA5-BC66-EEAF41306F9F}
 	EndGlobalSection
 EndGlobal

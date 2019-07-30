@@ -38,8 +38,7 @@ namespace Pql.Engine.Interfaces.Internal
 
         public FieldMetadata RequireField(int fieldId)
         {
-            FieldMetadata result;
-            if (!Fields.TryGetValue(fieldId, out result))
+            if (!Fields.TryGetValue(fieldId, out var result))
             {
                 throw new ArgumentException("Invalid fieldId: " + fieldId);
             }
@@ -61,14 +60,12 @@ namespace Pql.Engine.Interfaces.Internal
 
         public FieldMetadata TryGetField(int docType, string fieldName)
         {
-            Dictionary<string, int> docFields;
-            if (!DocTypeFieldNameToFieldId.TryGetValue(docType, out docFields))
+            if (!DocTypeFieldNameToFieldId.TryGetValue(docType, out var docFields))
             {
                 return null;
             }
 
-            int fieldId;
-            if (!docFields.TryGetValue(fieldName, out fieldId))
+            if (!docFields.TryGetValue(fieldName, out var fieldId))
             {
                 return null;
             }
@@ -194,8 +191,7 @@ namespace Pql.Engine.Interfaces.Internal
 
         public DocumentTypeDescriptor RequireDocumentType(int docType)
         {
-            DocumentTypeDescriptor result;
-            if (!DocumentTypeDescriptors.TryGetValue(docType, out result))
+            if (!DocumentTypeDescriptors.TryGetValue(docType, out var result))
             {
                 throw new ArgumentException("Unknown document type: " + docType);
             }
@@ -237,8 +233,7 @@ namespace Pql.Engine.Interfaces.Internal
 
             var docType = field.OwnerDocumentType;
 
-            Dictionary<string, int> docFields;
-            if (!DocTypeFieldNameToFieldId.TryGetValue(field.OwnerDocumentType, out docFields))
+            if (!DocTypeFieldNameToFieldId.TryGetValue(field.OwnerDocumentType, out var docFields))
             {
                 docFields = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
                 DocTypeFieldNameToFieldId.Add(field.OwnerDocumentType, docFields);
@@ -309,8 +304,7 @@ namespace Pql.Engine.Interfaces.Internal
                 throw new ArgumentNullException("docTypeName");
             }
 
-            int result;
-            if (!DocTypeNameToDocType.TryGetValue(docTypeName, out result))
+            if (!DocTypeNameToDocType.TryGetValue(docTypeName, out var result))
             {
                 throw new ArgumentException("Unknown document type name: " + docTypeName, "docTypeName");
             }

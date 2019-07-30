@@ -15,9 +15,9 @@ namespace Pql.Engine.Interfaces.Internal
     /// </summary>
     public sealed class DriverRowData
     {
-        private static readonly Dictionary<DbType, Type> FieldTypeToNativeType;
-        private static readonly Dictionary<Type, DbType> NativeTypeToFieldType;
-        private static readonly Dictionary<DbType, DataTypeRepresentation> FieldStorage;
+        private static readonly Dictionary<DbType, Type> s_fieldTypeToNativeType;
+        private static readonly Dictionary<Type, DbType> s_nativeTypeToFieldType;
+        private static readonly Dictionary<DbType, DataTypeRepresentation> s_fieldStorage;
         private readonly int[] m_fieldCountsByStorageType;
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace Pql.Engine.Interfaces.Internal
             for (var ordinal = 0; ordinal < fieldTypes.Length; ordinal++)
             {
                 var dbType = fieldTypes[ordinal];
-                var storageType = FieldStorage[dbType];
+                var storageType = s_fieldStorage[dbType];
                 count = m_fieldCountsByStorageType[(byte)storageType];
 
                 FieldArrayIndexes[ordinal] = count;
@@ -95,13 +95,13 @@ namespace Pql.Engine.Interfaces.Internal
                 m_fieldCountsByStorageType[(byte)storageType] = count + 1;
             }
 
-            count = m_fieldCountsByStorageType[(int) DataTypeRepresentation.Value8Bytes];
+            count = m_fieldCountsByStorageType[(int)DataTypeRepresentation.Value8Bytes];
             ValueData8Bytes = count > 0 ? new ValueHolder8Bytes[count] : null;
-            count = m_fieldCountsByStorageType[(int) DataTypeRepresentation.Value16Bytes];
+            count = m_fieldCountsByStorageType[(int)DataTypeRepresentation.Value16Bytes];
             ValueData16Bytes = count > 0 ? new ValueHolder16Bytes[count] : null;
-            count = m_fieldCountsByStorageType[(int) DataTypeRepresentation.String];
+            count = m_fieldCountsByStorageType[(int)DataTypeRepresentation.String];
             StringData = count > 0 ? new String[count] : null;
-            count = m_fieldCountsByStorageType[(int) DataTypeRepresentation.ByteArray];
+            count = m_fieldCountsByStorageType[(int)DataTypeRepresentation.ByteArray];
             BinaryData = count > 0 ? new SizableArrayOfByte[count] : null;
 
             if (BinaryData != null)
@@ -226,7 +226,7 @@ namespace Pql.Engine.Interfaces.Internal
                 {
                     throw new DataException("Character array length must be equal to 1. Actual length: " + data.Length);
                 }
-                
+
                 return data[0];
             }
 
@@ -271,8 +271,8 @@ namespace Pql.Engine.Interfaces.Internal
             if (BitVector.Get(NotNulls, ordinal))
             {
                 var data = StringData[FieldArrayIndexes[ordinal]];
-                int toCopy = (int)Math.Min(length, Math.Min(buffer.Length - bufferoffset, data.Length - fieldoffset));
-                for (var i = 0; i < toCopy ; i++)
+                var toCopy = (int)Math.Min(length, Math.Min(buffer.Length - bufferoffset, data.Length - fieldoffset));
+                for (var i = 0; i < toCopy; i++)
                 {
                     buffer[bufferoffset + i] = data[i];
                 }
@@ -280,7 +280,7 @@ namespace Pql.Engine.Interfaces.Internal
 
             return 0;
         }
-        
+
         /// <summary>
         /// Returns floating point value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
@@ -370,7 +370,7 @@ namespace Pql.Engine.Interfaces.Internal
             if (BitVector.Get(NotNulls, i))
             {
                 var data = BinaryData[FieldArrayIndexes[i]];
-                int toCopy = (int)Math.Min(length, Math.Min(buffer.Length - bufferoffset, data.Length - fieldoffset));
+                var toCopy = (int)Math.Min(length, Math.Min(buffer.Length - bufferoffset, data.Length - fieldoffset));
                 if (toCopy > 0)
                 {
                     Buffer.BlockCopy(data.Data, (int)fieldoffset, buffer, bufferoffset, toCopy);
@@ -457,7 +457,7 @@ namespace Pql.Engine.Interfaces.Internal
                     throw new Exception("Invalid data type: " + dbType);
             }
         }
-        
+
         /// <summary>
         /// Generates an expression that returns Nullable(T) where T is defined by field's DbType.
         /// </summary>
@@ -534,12 +534,12 @@ namespace Pql.Engine.Interfaces.Internal
             var indexinarray = Expression.ArrayIndex(arrayindexdata, ordinal);
             Expression fieldValue = Expression.ArrayIndex(Expression.Field(rowData, valueArrayName), indexinarray);
 
-            var isnotnull = Expression.Call(typeof (BitVector), "Get", null, notnulldata, ordinal);
+            var isnotnull = Expression.Call(typeof(BitVector), "Get", null, notnulldata, ordinal);
 
             // value types use Nullable(T) to pass nullability information
             if (fieldValue.Type.IsValueType)
             {
-                var nullabletype = typeof (UnboxableNullable<>).MakeGenericType(underlyingType);
+                var nullabletype = typeof(UnboxableNullable<>).MakeGenericType(underlyingType);
 
                 if (subFieldName != null)
                 {
@@ -547,11 +547,11 @@ namespace Pql.Engine.Interfaces.Internal
                 }
 
                 return Expression.Condition(
-                    isnotnull, 
+                    isnotnull,
                     ExpressionTreeExtensions.MakeNewNullable(nullabletype, fieldValue),
                     ExpressionTreeExtensions.MakeNewNullable(nullabletype));
             }
-            
+
             // null values of reference types simply take value of null
             return Expression.Condition(isnotnull, fieldValue, Expression.Constant(null, fieldValue.Type));
         }
@@ -565,7 +565,7 @@ namespace Pql.Engine.Interfaces.Internal
             var indexinarray = Expression.ArrayIndex(arrayindexdata, ordinal);
             Expression fieldValue = Expression.ArrayAccess(Expression.Field(rowData, valueArrayName), indexinarray);
 
-            var setNotNull = Expression.Call(typeof (BitVector), "Set", null, notnulldata, ordinal);
+            var setNotNull = Expression.Call(typeof(BitVector), "Set", null, notnulldata, ordinal);
 
             // value types use Nullable(T) to pass nullability information
             if (fieldValue.Type.IsValueType)
@@ -588,11 +588,11 @@ namespace Pql.Engine.Interfaces.Internal
             // null values of reference types simply take value of null
             if (dbType == DbType.Object || dbType == DbType.Binary)
             {
-                var methodInfo = typeof (SizableArrayOfByte).GetMethod("CopyFrom", new Type[] {typeof (SizableArrayOfByte)});
+                var methodInfo = typeof(SizableArrayOfByte).GetMethod("CopyFrom", new Type[] { typeof(SizableArrayOfByte) });
                 return Expression.IfThen(
                     Expression.ReferenceNotEqual(value, Expression.Constant(null, value.Type)),
                     Expression.Block(
-                        Expression.Call(fieldValue, methodInfo, value), 
+                        Expression.Call(fieldValue, methodInfo, value),
                         setNotNull));
             }
 
@@ -749,7 +749,7 @@ namespace Pql.Engine.Interfaces.Internal
 
         static DriverRowData()
         {
-            FieldStorage = new Dictionary<DbType, DataTypeRepresentation>
+            s_fieldStorage = new Dictionary<DbType, DataTypeRepresentation>
                 {
                     {DbType.AnsiString, DataTypeRepresentation.String},
                     {DbType.AnsiStringFixedLength, DataTypeRepresentation.String},
@@ -779,7 +779,7 @@ namespace Pql.Engine.Interfaces.Internal
                     {DbType.Xml, DataTypeRepresentation.String}
                 };
 
-            NativeTypeToFieldType = new Dictionary<Type, DbType>
+            s_nativeTypeToFieldType = new Dictionary<Type, DbType>
                 {
                     {typeof (String), DbType.String},
                     {typeof (SizableArrayOfByte), DbType.Binary},
@@ -802,7 +802,7 @@ namespace Pql.Engine.Interfaces.Internal
                 };
 
             //FieldTypes.Add(DbType.VarNumeric, null);
-            FieldTypeToNativeType = new Dictionary<DbType, Type>
+            s_fieldTypeToNativeType = new Dictionary<DbType, Type>
                 {
                     {DbType.AnsiString, typeof (String)},
                     {DbType.AnsiStringFixedLength, typeof (String)},
@@ -841,8 +841,7 @@ namespace Pql.Engine.Interfaces.Internal
         /// <exception cref="ArgumentOutOfRangeException">Unknown data type</exception>
         public static Type DeriveSystemType(DbType dbType)
         {
-            Type result;
-            if (!FieldTypeToNativeType.TryGetValue(dbType, out result))
+            if (!s_fieldTypeToNativeType.TryGetValue(dbType, out var result))
             {
                 throw new ArgumentOutOfRangeException("dbType", dbType, "Unknown data type");
             }
@@ -864,8 +863,7 @@ namespace Pql.Engine.Interfaces.Internal
                 throw new ArgumentNullException("type");
             }
 
-            DbType result;
-            if (!NativeTypeToFieldType.TryGetValue(type, out result))
+            if (!s_nativeTypeToFieldType.TryGetValue(type, out var result))
             {
                 throw new ArgumentException("Unsupported type: " + type.FullName);
             }
@@ -915,7 +913,7 @@ namespace Pql.Engine.Interfaces.Internal
 
         public static DataTypeRepresentation DeriveRepresentationType(DbType dbType)
         {
-            return FieldStorage[dbType];
+            return s_fieldStorage[dbType];
         }
     }
 }

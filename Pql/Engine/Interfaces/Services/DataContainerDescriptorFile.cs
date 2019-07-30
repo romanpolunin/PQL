@@ -19,13 +19,8 @@ namespace Pql.Engine.Interfaces.Services
                 throw new ArgumentNullException("version");
             }
 
-            if (descriptor == null)
-            {
-                throw new ArgumentNullException("descriptor");
-            }
-
             DriverVersion = version.ToString();
-            DataContainerDescriptor = descriptor;
+            DataContainerDescriptor = descriptor ?? throw new ArgumentNullException("descriptor");
         }
     }
 }

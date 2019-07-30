@@ -16,12 +16,7 @@ namespace Pql.Engine.DataContainer
         /// </summary>
         public static void Set(IPqlClientSecurityContext clientSecurityContext)
         {
-            if (clientSecurityContext == null)
-            {
-                throw new ArgumentNullException("clientSecurityContext");
-            }
-
-            Context.Value = clientSecurityContext;
+            Context.Value = clientSecurityContext ?? throw new ArgumentNullException("clientSecurityContext");
         }
     }
 }

@@ -82,24 +82,9 @@ namespace Pql.Engine.DataContainer.RamDriver
 
             public ItemComparer(BitVector notNulls, ExpandableArray<TUnderlyingValue> data, IComparer<TUnderlyingValue> valueComparer)
             {
-                if (notNulls == null)
-                {
-                    throw new ArgumentNullException("notNulls");
-                }
-
-                if (data == null)
-                {
-                    throw new ArgumentNullException("data");
-                }
-
-                if (valueComparer == null)
-                {
-                    throw new ArgumentNullException("valueComparer");
-                }
-
-                m_notNulls = notNulls;
-                m_data = data;
-                m_valueComparer = valueComparer;
+                m_notNulls = notNulls ?? throw new ArgumentNullException("notNulls");
+                m_data = data ?? throw new ArgumentNullException("data");
+                m_valueComparer = valueComparer ?? throw new ArgumentNullException("valueComparer");
             }
 
             public int Compare(int x, int y)

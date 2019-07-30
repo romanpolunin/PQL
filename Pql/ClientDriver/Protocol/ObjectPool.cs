@@ -48,9 +48,8 @@ namespace Pql.ClientDriver.Protocol
             {
                 return new ObjectPoolAccessor(this, m_items.Take(cancellation));
             }
-            
-            T item;
-            if (!m_items.TryTake(out item, 0, cancellation))
+
+            if (!m_items.TryTake(out var item, 0, cancellation))
             {
                 item = m_objectFactory();
             }
@@ -89,18 +88,8 @@ namespace Pql.ClientDriver.Protocol
             /// </summary>
             public ObjectPoolAccessor(ObjectPool<T> pool, T item)
             {
-                if (pool == null)
-                {
-                    throw new ArgumentNullException("pool");
-                }
-
-                if (item == null)
-                {
-                    throw new ArgumentNullException("item");
-                }
-
-                m_pool = pool;
-                m_item = item;
+                m_pool = pool ?? throw new ArgumentNullException("pool");
+                m_item = item ?? throw new ArgumentNullException("item");
             }
 
             /// <summary>

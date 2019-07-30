@@ -123,12 +123,8 @@ namespace Pql.ExpressionEngine.Compiler
             {
                 var name = root.ChildNodes[i].Token.Text; // no need to lowercase this text
                 var next = TryGetFieldOrPropertyInfoFromContext(name, identifier);
-                if (next == null)
-                {
-                    throw new CompilationException(string.Format("Could not find field or property {0} on type {1}",
+                identifier = next ?? throw new CompilationException(string.Format("Could not find field or property {0} on type {1}",
                         name, identifier.Type));
-                }
-                identifier = next;
             }
 
             return identifier;
@@ -136,7 +132,6 @@ namespace Pql.ExpressionEngine.Compiler
 
         private Expression BuildIdentifierRootExpression(ParseTreeNode root, CompilerState state)
         {
-            AtomMetadata atom;
             var name = root.ChildNodes[0].Token.ValueString;
 
             // first, look for an argument with this name
@@ -156,7 +151,7 @@ namespace Pql.ExpressionEngine.Compiler
             }
 
             // and only then look through available IDENTIFIER atoms
-            if (m_atoms.TryGetValue(name, out atom) && atom.AtomType == AtomType.Identifier)
+            if (m_atoms.TryGetValue(name, out var atom) && atom.AtomType == AtomType.Identifier)
             {
                 if (atom.ExpressionGenerator != null)
                 {
@@ -182,8 +177,7 @@ namespace Pql.ExpressionEngine.Compiler
                     throw new CompilationException("Atom's MethodInfo cannot be used for an Id expression, because context is not available: " + atom.Name, root);
                 }
 
-                Expression adjustedContext;
-                if (paramInfo.Length > 1 || !ExpressionTreeExtensions.TryAdjustReturnType(root, context, paramInfo[0].ParameterType, out adjustedContext))
+                if (paramInfo.Length > 1 || !ExpressionTreeExtensions.TryAdjustReturnType(root, context, paramInfo[0].ParameterType, out var adjustedContext))
                 {
                     throw new CompilationException("Atom's MethodInfo may only have either zero arguments or one argument of the same type as expression context: " + atom.Name, root);
                 }
@@ -266,11 +260,10 @@ namespace Pql.ExpressionEngine.Compiler
             idNode.RequireChildren(1); // dotted identifiers are not supported for function calls
 
             // funCall -> funArgs 
-            root.RequireChild("funArgs", 1); 
-            
-            AtomMetadata atom;
+            root.RequireChild("funArgs", 1);
+
             var name = idNode.ChildNodes[0].Token.ValueString;
-            if (!m_atoms.TryGetValue(name, out atom) || atom.AtomType != AtomType.Function)
+            if (!m_atoms.TryGetValue(name, out var atom) || atom.AtomType != AtomType.Function)
             {
                 throw new CompilationException("Unknown function: " + name, root);
             }
@@ -306,13 +299,12 @@ namespace Pql.ExpressionEngine.Compiler
                 var argNode = funArgs.ChildNodes[i];
                 var value = state.ParentRuntime.Analyze(argNode, state);
 
-                Expression adjusted;
-                if (!ExpressionTreeExtensions.TryAdjustReturnType(root, value, param.ParameterType, out adjusted))
+                if (!ExpressionTreeExtensions.TryAdjustReturnType(root, value, param.ParameterType, out var adjusted))
                 {
                     throw new CompilationException(string.Format("Could not adjust parameter number {0} to invoke function {1}",
                         i, atom.Name), funArgs.ChildNodes[i]);
                 }
-                
+
                 args[i] = adjusted;
             }
 
@@ -397,8 +389,7 @@ namespace Pql.ExpressionEngine.Compiler
                         throw new CompilationException("CASE statement with a test variable requires WHEN clauses to be constant values", whenNode);
                     }
 
-                    Expression adjusted;
-                    if (ExpressionTreeExtensions.TryAdjustReturnType(whenNode, when[i], switchVariable.Type, out adjusted))
+                    if (ExpressionTreeExtensions.TryAdjustReturnType(whenNode, when[i], switchVariable.Type, out var adjusted))
                     {
                         when[i] = adjusted;
                     }
@@ -450,8 +441,7 @@ namespace Pql.ExpressionEngine.Compiler
 
                     if (!ReferenceEquals(then, firstNonVoidThen) && then.IsVoid())
                     {
-                        Expression adjusted;
-                        if (ExpressionTreeExtensions.TryAdjustReturnType(thenNode, then, firstNonVoidThen.Type, out adjusted))
+                        if (ExpressionTreeExtensions.TryAdjustReturnType(thenNode, then, firstNonVoidThen.Type, out var adjusted))
                         {
                             cases[i] = new Tuple<Expression[], Expression, ParseTreeNode>(cases[i].Item1, adjusted, cases[i].Item3);
                         }
@@ -516,8 +506,7 @@ namespace Pql.ExpressionEngine.Compiler
                 // try to auto-adjust types of this "THEN" and current tail expression if needed
                 if (tail != null)
                 {
-                    Expression adjusted;
-                    if (ExpressionTreeExtensions.TryAdjustReturnType(thenNode, then, tail.Type, out adjusted))
+                    if (ExpressionTreeExtensions.TryAdjustReturnType(thenNode, then, tail.Type, out var adjusted))
                     {
                         then = adjusted;
                     }

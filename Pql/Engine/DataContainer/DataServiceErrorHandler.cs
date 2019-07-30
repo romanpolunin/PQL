@@ -11,11 +11,7 @@ namespace Pql.Engine.DataContainer
 
         public DataServiceErrorHandler(ITracer tracer)
         {
-            if (tracer == null)
-            {
-                throw new ArgumentNullException("tracer");
-            }    
-            m_tracer = tracer;
+            m_tracer = tracer ?? throw new ArgumentNullException("tracer");
         }
 
         public void ProvideFault(Exception error, MessageVersion version, ref Message fault)

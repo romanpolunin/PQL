@@ -1,7 +1,7 @@
 ﻿using Pql.Engine.DataContainer.RamDriver;
 using Pql.Engine.Interfaces.Services;
 using Pql.IntegrationStubs;
-using StructureMap.Configuration.DSL;
+using StructureMap;
 
 namespace Pql.Server
 {

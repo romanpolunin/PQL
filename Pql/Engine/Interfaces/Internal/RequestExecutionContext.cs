@@ -63,19 +63,9 @@ namespace Pql.Engine.Interfaces.Internal
         /// <param name="tracer">Tracer object</param>
         public RequestExecutionContext(IPqlEngineHostProcess process, ITracer tracer)
         {
-            if (process == null)
-            {
-                throw new ArgumentNullException("process");
-            }
+            m_tracer = tracer ?? throw new ArgumentNullException("tracer");
 
-            if (tracer == null)
-            {
-                throw new ArgumentNullException("tracer");
-            }
-
-            m_tracer = tracer;
-
-            m_process = process;
+            m_process = process ?? throw new ArgumentNullException("process");
             
             ParsedRequest = new ParsedRequest(false);
             Request = new DataRequest();
@@ -92,58 +82,28 @@ namespace Pql.Engine.Interfaces.Internal
 
         public void AttachResponseHeaders(DataResponse headers)
         {
-            if (headers == null)
-            {
-                throw new ArgumentNullException("headers");
-            }
-
-            ResponseHeaders = headers;
+            ResponseHeaders = headers ?? throw new ArgumentNullException("headers");
         }
 
         public void AttachContainerDescriptor(DataContainerDescriptor containerDescriptor)
         {
-            if (containerDescriptor == null)
-            {
-                throw new ArgumentNullException("containerDescriptor");
-            }
-
-            ContainerDescriptor = containerDescriptor;
+            ContainerDescriptor = containerDescriptor ?? throw new ArgumentNullException("containerDescriptor");
         }
 
         public void AttachCachedInfo(RequestExecutionContextCacheInfo cacheInfo)
         {
-            if (cacheInfo == null)
-            {
-                throw new ArgumentNullException("cacheInfo");
-            }
-
-            CacheInfo = cacheInfo;
+            CacheInfo = cacheInfo ?? throw new ArgumentNullException("cacheInfo");
         }
 
         public void AttachInputMessage(PqlMessage requestMessage, IDataEngine engine, IPqlClientSecurityContext authContext)
         {
-            if (requestMessage == null)
-            {
-                throw new ArgumentNullException("requestMessage");
-            }
-            
-            if (engine == null)
-            {
-                throw new ArgumentNullException("engine");
-            }
-            
-            if (authContext == null)
-            {
-                throw new ArgumentNullException("authContext");
-            }
-
             AssertIsClean();
 
             ClauseEvaluationContext = new ClauseEvaluationContext();
 
-            m_authContext = authContext;
-            m_requestMessage = requestMessage;
-            m_engine = engine;
+            m_authContext = authContext ?? throw new ArgumentNullException("authContext");
+            m_requestMessage = requestMessage ?? throw new ArgumentNullException("requestMessage");
+            m_engine = engine ?? throw new ArgumentNullException("engine");
             m_cancellationTokenSource = new CancellationTokenSource();
 
             // re-initialize the ring, for fault tolerance in case if previous processor fails to release items
@@ -165,17 +125,12 @@ namespace Pql.Engine.Interfaces.Internal
 
         public void AttachDriverOutputBufferAndInputParameters(DriverRowData driverOutputBuffer, ParsedRequest parsedRequest)
         {
-            if (driverOutputBuffer == null)
-            {
-                throw new ArgumentNullException("driverOutputBuffer");
-            }
-
             if (DriverOutputBuffer != null)
             {
                 throw new InvalidOperationException("Cannot reassign driver output buffer");
             }
 
-            DriverOutputBuffer = driverOutputBuffer;
+            DriverOutputBuffer = driverOutputBuffer ?? throw new ArgumentNullException("driverOutputBuffer");
             ClauseEvaluationContext.InputRow = driverOutputBuffer;
             ClauseEvaluationContext.InputParametersRow = parsedRequest.Params.InputValues;
             ClauseEvaluationContext.InputParametersCollections = parsedRequest.Params.InputCollections;
@@ -183,17 +138,12 @@ namespace Pql.Engine.Interfaces.Internal
 
         public void AttachInputDataEnumerator(IDriverDataEnumerator inputDataEnumerator)
         {
-            if (inputDataEnumerator == null)
-            {
-                throw new ArgumentNullException("inputDataEnumerator");
-            }
-
             if (InputDataEnumerator != null)
             {
                 throw new InvalidOperationException("Cannot reassign input data enumerator");
             }
 
-            InputDataEnumerator = inputDataEnumerator;
+            InputDataEnumerator = inputDataEnumerator ?? throw new ArgumentNullException("inputDataEnumerator");
         }
 
         public void PrepareBuffersForUpdate()
@@ -359,12 +309,7 @@ namespace Pql.Engine.Interfaces.Internal
 
             public RequestCompletion(RequestExecutionContext executionContext)
             {
-                if (executionContext == null)
-                {
-                    throw new ArgumentNullException("executionContext");
-                }
-
-                m_executionContext = executionContext;
+                m_executionContext = executionContext ?? throw new ArgumentNullException("executionContext");
             }
 
             public void Dispose()

@@ -36,12 +36,7 @@ namespace Pql.Engine.DataContainer.Engine
                 throw new ArgumentNullException("process");
             }
 
-            if (counters == null)
-            {
-                throw new ArgumentNullException("counters");
-            }
-
-            m_counters = counters;
+            m_counters = counters ?? throw new ArgumentNullException("counters");
             m_executionContext = new RequestExecutionContext(process, tracer);
         }
 

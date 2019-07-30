@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using Irony.Parsing;
 using Pql.ExpressionEngine.Interfaces;
+using Pql.ExpressionEngine.Utilities;
 
 namespace Pql.ExpressionEngine.Compiler
 {

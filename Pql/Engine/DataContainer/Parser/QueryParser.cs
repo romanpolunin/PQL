@@ -12,14 +12,15 @@ using Pql.Engine.Interfaces.Internal;
 using Pql.Engine.Interfaces.Parsing;
 using Pql.ExpressionEngine.Compiler;
 using Pql.ExpressionEngine.Interfaces;
+using Pql.ExpressionEngine.Utilities;
 
 namespace Pql.Engine.DataContainer.Parser
 {
     internal class QueryParser
     {
-        private static readonly Grammar Grammar;
-        private static readonly LanguageData LangData;
-        private static readonly NonTerminal PqlNonTerminal;
+        private static readonly Grammar s_grammar;
+        private static readonly LanguageData s_langData;
+        private static readonly NonTerminal s_pqlNonTerminal;
 
         private static readonly IExpressionEvaluatorRuntime s_expressionRuntime;
         
@@ -30,9 +31,9 @@ namespace Pql.Engine.DataContainer.Parser
         
         static QueryParser()
         {
-            Grammar = new GrammarPql();
-            LangData = new LanguageData(Grammar);
-            PqlNonTerminal = LangData.GrammarData.NonTerminals.Single(x => x.Name == "stmtList");
+            s_grammar = new GrammarPql();
+            s_langData = new LanguageData(s_grammar);
+            s_pqlNonTerminal = s_langData.GrammarData.NonTerminals.Single(x => x.Name == "stmtList");
             s_expressionRuntime = new ExpressionEvaluatorRuntime();
             InitPqlExpressionRuntime(s_expressionRuntime);
         }
@@ -114,8 +115,7 @@ namespace Pql.Engine.DataContainer.Parser
 
         private static Expression GetOrAddFieldRefToCompilationContext(ParsedRequest parsedRequest, PqlCompilerState compilerState, FieldMetadata field)
         {
-            Tuple<ParameterExpression, Expression> refTuple;
-            if (compilerState.FieldRefs.TryGetValue(field.FieldId, out refTuple))
+            if (compilerState.FieldRefs.TryGetValue(field.FieldId, out var refTuple))
             {
                 return refTuple.Item1;
             }
@@ -133,8 +133,7 @@ namespace Pql.Engine.DataContainer.Parser
 
         private static Expression GetOrAddParameterRefToCompilationContext(ParsedRequest parsedRequest, PqlCompilerState compilerState, int parameterOrdinal)
         {
-            Tuple<ParameterExpression, Expression> refTuple;
-            if (compilerState.ParamRefs.TryGetValue(parameterOrdinal, out refTuple))
+            if (compilerState.ParamRefs.TryGetValue(parameterOrdinal, out var refTuple))
             {
                 return refTuple.Item1;
             }
@@ -212,18 +211,13 @@ namespace Pql.Engine.DataContainer.Parser
         /// </summary>
         public QueryParser(DataContainerDescriptor containerDescriptor, int maxConcurrency)
         {
-            if (containerDescriptor == null)
-            {
-                throw new ArgumentNullException("containerDescriptor");
-            }
-
             m_parsers = new ObjectPool<Irony.Parsing.Parser>(maxConcurrency, null);
             for (var i = 0; i < maxConcurrency; i++)
             {
-                m_parsers.Return(new Irony.Parsing.Parser(LangData, PqlNonTerminal));
+                m_parsers.Return(new Irony.Parsing.Parser(s_langData, s_pqlNonTerminal));
             }
 
-            m_containerDescriptor = containerDescriptor;
+            m_containerDescriptor = containerDescriptor ?? throw new ArgumentNullException("containerDescriptor");
             m_preprocessor = new QueryPreprocessor(containerDescriptor);
 
             // these predefined instances of ParseTreeNode are substituted when parsing "select * from .." statement,
@@ -722,8 +716,7 @@ namespace Pql.Engine.DataContainer.Parser
                 else
                 {
                     var number = clause.RequireChild("number", 1);
-                    int value;
-                    if (!int.TryParse(number.Token.ValueString, NumberStyles.Integer, CultureInfo.InvariantCulture, out value)
+                    if (!int.TryParse(number.Token.ValueString, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
                         || value < 0)
                     {
                         throw new CompilationException("Invalid value for page offset", number);
@@ -743,8 +736,7 @@ namespace Pql.Engine.DataContainer.Parser
                 else
                 {
                     var number = clause.RequireChild("number", 1);
-                    int value;
-                    if (!int.TryParse(number.Token.ValueString, NumberStyles.Integer, CultureInfo.InvariantCulture, out value)
+                    if (!int.TryParse(number.Token.ValueString, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
                         || value < -1)
                     {
                         throw new CompilationException("Invalid value for page size", number);
@@ -984,24 +976,9 @@ namespace Pql.Engine.DataContainer.Parser
             Type returnType) 
             : base(parentRuntime, contextType, returnType, null)
         {
-            if (parsedRequest == null)
-            {
-                throw new ArgumentNullException("parsedRequest");
-            }
-
-            if (containerDescriptor == null)
-            {
-                throw new ArgumentNullException("containerDescriptor");
-            }
-
-            if (requestParams == null)
-            {
-                throw new ArgumentNullException("requestParams");
-            }
-
-            ParsedRequest = parsedRequest;
-            RequestParameters = requestParams;
-            ContainerDescriptor = containerDescriptor;
+            ParsedRequest = parsedRequest ?? throw new ArgumentNullException("parsedRequest");
+            RequestParameters = requestParams ?? throw new ArgumentNullException("requestParams");
+            ContainerDescriptor = containerDescriptor ?? throw new ArgumentNullException("containerDescriptor");
             FieldRefs = new Dictionary<int, Tuple<ParameterExpression, Expression>>();
             ParamRefs = new Dictionary<int, Tuple<ParameterExpression, Expression>>();
         }

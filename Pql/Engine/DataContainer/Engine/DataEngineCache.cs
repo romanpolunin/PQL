@@ -13,6 +13,7 @@ namespace Pql.Engine.DataContainer.Engine
 {
     public sealed class DataEngineCache : IDataEngineCache
     {
+        private readonly IContainer m_container;
         private readonly ITracer m_tracer;
         private volatile ConcurrentDictionary<string, ConcurrentDictionary<string, IDataEngine>> m_engines;
         private readonly string m_instanceName;
@@ -20,13 +21,8 @@ namespace Pql.Engine.DataContainer.Engine
         private readonly string m_storageDriverKey;
         private Timer m_timer;
 
-        public DataEngineCache(ITracer tracer, string instanceName, int maxEngineConcurrency)
+        public DataEngineCache(IContainer container, ITracer tracer, string instanceName, int maxEngineConcurrency)
         {
-            if (tracer == null)
-            {
-                throw new ArgumentNullException("tracer");
-            }
-
             if (string.IsNullOrEmpty(instanceName))
             {
                 throw new ArgumentNullException("instanceName");
@@ -37,7 +33,8 @@ namespace Pql.Engine.DataContainer.Engine
                 throw new ArgumentOutOfRangeException("maxEngineConcurrency");
             }
 
-            m_engines = new ConcurrentDictionary<string, ConcurrentDictionary<string, IDataEngine>>();
+            m_container = container ?? throw new ArgumentNullException(nameof(container));
+            m_tracer = tracer ?? throw new ArgumentNullException("tracer");
             m_instanceName = instanceName;
             m_maxEngineConcurrency = maxEngineConcurrency;
 
@@ -48,13 +45,13 @@ namespace Pql.Engine.DataContainer.Engine
                 throw new InvalidOperationException("appSetting value for key 'storageDriverKey' is not set");
             }
 
-            if (null == ObjectFactory.Container.TryGetInstance<IStorageDriverFactory>(m_storageDriverKey))
+            if (null == m_container.TryGetInstance<IStorageDriverFactory>(m_storageDriverKey))
             {
                 throw new ArgumentException("Container does not have a factory for storage driver " + m_storageDriverKey);
             }
 
+            m_engines = new ConcurrentDictionary<string, ConcurrentDictionary<string, IDataEngine>>();
             m_timer = new Timer(OnTimerCallback, this, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
-            m_tracer = tracer;
         }
 
         public int GetTotalEnginesCount()
@@ -102,8 +99,7 @@ namespace Pql.Engine.DataContainer.Engine
             }
 
             // avoid using GetOrAdd because it may invoke factory method multiple times
-            ConcurrentDictionary<string, IDataEngine> tenantEngines;
-            if (!m_engines.TryGetValue(tenantId, out tenantEngines))
+            if (!m_engines.TryGetValue(tenantId, out var tenantEngines))
             {
                 lock (m_engines)
                 {
@@ -124,8 +120,7 @@ namespace Pql.Engine.DataContainer.Engine
             }
 
             // avoid using GetOrAdd because it may invoke factory method multiple times
-            IDataEngine engine;
-            if (!tenantEngines.TryGetValue(scopeId, out engine))
+            if (!tenantEngines.TryGetValue(scopeId, out var engine))
             {
                 lock (tenantEngines)
                 {
@@ -134,14 +129,14 @@ namespace Pql.Engine.DataContainer.Engine
                         var engineCount = GetTotalEnginesCount();
                         if (engineCount > MaxTotalEnginesCount)
                         {
-                            new Task(x => ForceExpireOneEngine((DataEngineCache) x), this).Start();
+                            new Task(x => ForceExpireOneEngine((DataEngineCache)x), this).Start();
                         }
 
                         m_tracer.InfoFormat("Creating new engine for tenant {0}, scope {1}", tenantId, scopeId);
-                        var factory = ObjectFactory.GetNamedInstance<IStorageDriverFactory>(m_storageDriverKey);
+                        var factory = m_container.GetInstance<IStorageDriverFactory>(m_storageDriverKey);
                         var storageDriver = factory.Create();
                         storageDriver.Initialize(m_tracer, GetDriverConnectionConfig(scopeId, factory));
-                        
+
                         engine = new DataEngine(m_tracer, m_instanceName, m_maxEngineConcurrency, storageDriver, RequireDescriptor(storageDriver));
 
                         if (!tenantEngines.TryAdd(scopeId, engine))
@@ -199,9 +194,8 @@ namespace Pql.Engine.DataContainer.Engine
                     if (diff.TotalMinutes > MaxEngineUnusedAgeMinutes)
                     {
                         cache.m_tracer.Info(string.Format("Aging out engine for tenant {0}, scope {1}", tenantEnginesRec.Key, engineRec.Key));
-                        IDataEngine engine;
-                        
-                        if (tenantEnginesRec.Value.TryRemove(engineRec.Key, out engine))
+
+                        if (tenantEnginesRec.Value.TryRemove(engineRec.Key, out var engine))
                         {
                             engine.Dispose();
                         }
@@ -242,9 +236,8 @@ namespace Pql.Engine.DataContainer.Engine
             if (oldest != null)
             {
                 cache.m_tracer.InfoFormat("Forced expiration of engine for tenant {0}, scope {1}", tenant, scope);
-                IDataEngine engine;
-                
-                if (container.TryRemove(scope, out engine))
+
+                if (container.TryRemove(scope, out var engine))
                 {
                     // only invoke Dispose here if the engine is not active right now
                     // otherwise, let it be garbage-collected
@@ -253,7 +246,7 @@ namespace Pql.Engine.DataContainer.Engine
                     {
                         ageseconds = -ageseconds;
                     }
-                    
+
                     if (ageseconds > 1.0)
                     {
                         engine.Dispose();

@@ -54,18 +54,8 @@ namespace Pql.ClientDriver.Protocol
         /// <param name="holders">Array of holder objects that must be disposed when reader is closed</param>
         public PqlProtocolUtility(PqlDataConnection connection, Stream inputStream, params IDisposable[] holders)
         {
-            if (inputStream == null)
-            {
-                throw new ArgumentNullException("inputStream");
-            }
-
-            if (connection == null)
-            {
-                throw new ArgumentNullException("connection");
-            }
-
-            Connection = connection;
-            InputStream = inputStream;
+            Connection = connection ?? throw new ArgumentNullException("connection");
+            InputStream = inputStream ?? throw new ArgumentNullException("inputStream");
             m_holders = holders;
         }
 

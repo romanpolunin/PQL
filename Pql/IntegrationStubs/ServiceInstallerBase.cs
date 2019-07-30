@@ -28,7 +28,7 @@ namespace Pql.IntegrationStubs
                 (sender, args) => GetAssembly(args.Name, mainAssembly, commonAssembly);
 
             // Get the host settings section.
-            var hostSettings = (WindowsServiceConfigSection)configuration.GetSection("thinksmartHost");
+            var hostSettings = (WindowsServiceConfigSection)configuration.GetSection("mycompanyHost");
 
             if (hostSettings != null)
             {
@@ -47,7 +47,7 @@ namespace Pql.IntegrationStubs
             }
             else
             {
-                throw new Exception("Could not locate thinksmartHost configuration section in config file!");
+                throw new Exception("Could not locate mycompanyHost configuration section in config file!");
             }
         }
 

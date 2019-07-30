@@ -36,8 +36,7 @@ namespace Pql.Engine.Interfaces.Internal
 
         public int TryGetDocumentCount(int documentType)
         {
-            int result;
-            return DocumentCounts != null && DocumentCounts.TryGetValue(documentType, out result) ? result : 0;
+            return DocumentCounts != null && DocumentCounts.TryGetValue(documentType, out var result) ? result : 0;
         }
     }
 }

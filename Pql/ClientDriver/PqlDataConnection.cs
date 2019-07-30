@@ -213,11 +213,6 @@ namespace Pql.ClientDriver
 
         internal IDataService BeginExecuteCommand(PqlDataCommand command)
         {
-            if (command == null)
-            {
-                throw new ArgumentNullException("command");
-            }
-
             if (m_activeCommand != null || m_connectionState == ConnectionState.Executing || m_connectionState == ConnectionState.Fetching)
             {
                 throw new InvalidOperationException("Another command is being executed or fetching is in progress");
@@ -238,7 +233,7 @@ namespace Pql.ClientDriver
             
             m_cancellationTokenSource = new CancellationTokenSource();
             m_connectionState = ConnectionState.Executing;
-            m_activeCommand = command;
+            m_activeCommand = command ?? throw new ArgumentNullException("command");
             return m_channel;
         }
 

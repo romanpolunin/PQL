@@ -357,9 +357,7 @@ namespace Pql.ExpressionEngine.UnitTest
         {
             m_runtime.RegisterAtom(new AtomMetadata(AtomType.Function, "CustomEndsWith", (root, state) =>
             {
-                Expression value;
-                Expression pattern;
-                var method = PrepareStringInstanceMethodCall("EndsWith", root, state, out value, out pattern);
+                var method = PrepareStringInstanceMethodCall("EndsWith", root, state, out var value, out var pattern);
 
                 return Expression.Condition(
                     Expression.ReferenceEqual(Expression.Constant(null), value),

@@ -33,9 +33,9 @@
             // 
             // serviceInstaller
             // 
-            this.serviceInstaller.Description = "ThinkSmart Service Host";
-            this.serviceInstaller.DisplayName = "ThinkSmart Service Host";
-            this.serviceInstaller.ServiceName = "THINKSMARTSERVICEHOST";
+            this.serviceInstaller.Description = "mycompany Service Host";
+            this.serviceInstaller.DisplayName = "mycompany Service Host";
+            this.serviceInstaller.ServiceName = "mycompanySERVICEHOST";
             this.serviceInstaller.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
             // 
             // serviceProcessInstaller

@@ -35,11 +35,6 @@ namespace Pql.ClientDriver.Wcf
         public PqlMessage(IPqlDataWriter dataWriter, IDisposable[] holders, string authTicket, string scopeId, string protocolVersion)
             : this()
         {
-            if (dataWriter == null)
-            {
-                throw new ArgumentNullException("dataWriter");
-            }
-
             if (string.IsNullOrWhiteSpace(authTicket))
             {
                 throw new ArgumentNullException("authTicket");
@@ -59,7 +54,7 @@ namespace Pql.ClientDriver.Wcf
             ScopeId = scopeId;
             ProtocolVersion = protocolVersion;
 
-            m_dataWriter = dataWriter;
+            m_dataWriter = dataWriter ?? throw new ArgumentNullException("dataWriter");
             m_holders = holders;
         }
 

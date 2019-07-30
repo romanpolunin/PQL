@@ -67,12 +67,7 @@ namespace Pql.ClientDriver.Protocol
         /// <exception cref="ArgumentNullException">Fields data is null</exception>
         public DataResponse(DataResponseField[] fields)
         {
-            if (fields == null)
-            {
-                throw new ArgumentNullException("fields");
-            }
-
-            Fields = fields;
+            Fields = fields ?? throw new ArgumentNullException("fields");
         }
 
         /// <summary>
@@ -89,8 +84,7 @@ namespace Pql.ClientDriver.Protocol
                 throw new ArgumentNullException("name");
             }
 
-            DataResponseField field;
-            if (!m_fieldsByName.TryGetValue(name, out field))
+            if (!m_fieldsByName.TryGetValue(name, out var field))
             {
                 throw new IndexOutOfRangeException("Unknown field: " + name);
             }

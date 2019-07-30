@@ -53,7 +53,7 @@ namespace Pql.Engine.DataContainer.Engine
                 {
                     foreach (var counter in counters)
                     {
-                        counter.RemoveInstance();
+                        //counter.RemoveInstance();
                         counter.Dispose();
                     }
                 }

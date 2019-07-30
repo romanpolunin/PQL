@@ -87,8 +87,7 @@ namespace Pql.ExpressionEngine.Compiler
                     var methodArgs = method.GetParameters();
                     if (methodArgs.Length == 1 && methodArgs[0].ParameterType != typeof(object))
                     {
-                        Expression adjusted;
-                        if (ExpressionTreeExtensions.TryAdjustReturnType(arg2Node, element, methodArgs[0].ParameterType, out adjusted))
+                        if (ExpressionTreeExtensions.TryAdjustReturnType(arg2Node, element, methodArgs[0].ParameterType, out var adjusted))
                         {
                             return Expression.Condition(
                                 Expression.ReferenceEqual(hashset, Expression.Constant(null)),
@@ -303,9 +302,7 @@ namespace Pql.ExpressionEngine.Compiler
 
         private static Expression PredefinedAtom_StringLike(ParseTreeNode root, string methodName, CompilerState state)
         {
-            Expression value;
-            Expression pattern;
-            var method = PrepareStringInstanceMethodCall(methodName, ExpressionTreeExtensions.UnwindTupleExprList(root), state, out value, out pattern);
+            var method = PrepareStringInstanceMethodCall(methodName, ExpressionTreeExtensions.UnwindTupleExprList(root), state, out var value, out var pattern);
 
             var constValue = value as ConstantExpression;
             var constPattern = pattern as ConstantExpression;
@@ -341,8 +338,7 @@ namespace Pql.ExpressionEngine.Compiler
             var targetType = RequireSystemType(arg2Node);
 
             // maybe we don't have to change type, or simply cast the numeric type?
-            Expression adjusted; 
-            if (ExpressionTreeExtensions.TryAdjustReturnType(root, value, targetType, out adjusted))
+            if (ExpressionTreeExtensions.TryAdjustReturnType(root, value, targetType, out var adjusted))
             {
                 return adjusted;
             }

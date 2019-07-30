@@ -833,9 +833,8 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="CompilationException">Argument types cannot be adjusted, try conversion</exception>
         public static Expression AdjustReturnType(ParseTreeNode root, Expression expr, Type targetType)
         {
-            Expression adjusted;
 
-            if (!TryAdjustReturnType(root, expr, targetType, out adjusted))
+            if (!TryAdjustReturnType(root, expr, targetType, out var adjusted))
             {
                 throw new CompilationException(
                     String.Format(
@@ -888,12 +887,11 @@ namespace Pql.ExpressionEngine.Interfaces
                     var setvar = Expression.Assign(variable, expr);
                     var hasvalue = Expression.Field(variable, "HasValue");
                     Expression value = Expression.Field(variable, "Value");
-                    Expression adjustedValue;
-                    if (TryAdjustReturnType(root, value, UnboxableNullable.GetUnderlyingType(targetType), out adjustedValue))
+                    if (TryAdjustReturnType(root, value, UnboxableNullable.GetUnderlyingType(targetType), out var adjustedValue))
                     {
                         adjusted = Expression.Block(
                             targetType,
-                            new [] {variable},
+                            new[] { variable },
                             setvar,
                             Expression.Condition(hasvalue, MakeNewNullable(targetType, adjustedValue), MakeNewNullable(targetType)));
                         return true;
@@ -901,8 +899,7 @@ namespace Pql.ExpressionEngine.Interfaces
                 }
                 else
                 {
-                    Expression adjustedValue;
-                    if (TryAdjustReturnType(root, expr, UnboxableNullable.GetUnderlyingType(targetType), out adjustedValue))
+                    if (TryAdjustReturnType(root, expr, UnboxableNullable.GetUnderlyingType(targetType), out var adjustedValue))
                     {
                         adjusted = MakeNewNullable(targetType, adjustedValue);
                         return true;

@@ -1017,8 +1017,7 @@ namespace Pql.ClientDriver
         /// <exception cref="ArgumentOutOfRangeException">Unknown data type</exception>
         public static Type DeriveSystemType(DbType dbType)
         {
-            Type result;
-            if (!FieldTypeToNativeType.TryGetValue(dbType, out result))
+            if (!FieldTypeToNativeType.TryGetValue(dbType, out var result))
             {
                 throw new ArgumentOutOfRangeException("dbType", dbType, "Unknown data type");
             }

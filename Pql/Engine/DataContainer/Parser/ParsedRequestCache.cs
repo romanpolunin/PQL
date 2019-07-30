@@ -47,9 +47,7 @@ namespace Pql.Engine.DataContainer.Parser
                 throw new ArgumentNullException("requestParams");
             }
 
-            long hash;
-            int modulo;
-            InitHash(out hash, out modulo);
+            InitHash(out var hash, out var modulo);
 
             if (request.HaveRequestBulk)
             {

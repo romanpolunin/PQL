@@ -7,6 +7,7 @@ using Pql.ClientDriver.Wcf;
 using Pql.Engine.DataContainer.Engine;
 using Pql.Engine.Interfaces;
 using Pql.Engine.Interfaces.Services;
+using StructureMap;
 
 namespace Pql.Engine.DataContainer
 {
@@ -20,6 +21,7 @@ namespace Pql.Engine.DataContainer
     {
         private readonly IPqlEngineHostProcess m_process;
         private readonly string m_instanceName;
+        private readonly IContainer m_container;
         private readonly ITracer m_tracer;
         private readonly RawDataWriterPerfCounters m_counters;
         private readonly IDataEngineCache m_enginesCache;
@@ -29,18 +31,8 @@ namespace Pql.Engine.DataContainer
         private readonly CancellationTokenSource m_cancellationTokenSource;
         private readonly string m_protocolVersion;
 
-        public DataService(ITracer tracer, IPqlEngineHostProcess process, string instanceName, int maxEngineConcurrency, IDataEngineCache dataEngineCache)
+        public DataService(IContainer container, ITracer tracer, IPqlEngineHostProcess process, string instanceName, int maxEngineConcurrency, IDataEngineCache dataEngineCache)
         {
-            if (tracer == null)
-            {
-                throw new ArgumentNullException("tracer");
-            }
-
-            if (process == null)
-            {
-                throw new ArgumentNullException("process");
-            }
-
             if (string.IsNullOrEmpty(instanceName))
             {
                 throw new ArgumentNullException("instanceName");
@@ -52,10 +44,11 @@ namespace Pql.Engine.DataContainer
             }
 
             m_protocolVersion = "default";
-            m_tracer = tracer;
+            m_container = container ?? throw new ArgumentNullException(nameof(container));
+            m_tracer = tracer ?? throw new ArgumentNullException("tracer");
 
             m_cancellationTokenSource = new CancellationTokenSource();
-            m_process = process;
+            m_process = process ?? throw new ArgumentNullException("process");
             m_instanceName = instanceName;
             m_maxEngineConcurrency = maxEngineConcurrency;
             
@@ -72,7 +65,7 @@ namespace Pql.Engine.DataContainer
                 m_requestManagersPool.Return(m_requestManagers[i]);
             }
 
-            m_enginesCache = dataEngineCache ?? new DataEngineCache(m_tracer, m_instanceName, m_maxEngineConcurrency);
+            m_enginesCache = dataEngineCache ?? new DataEngineCache(m_container, m_tracer, m_instanceName, m_maxEngineConcurrency);
         }
 
         public Message Process(Message message)

@@ -4,13 +4,13 @@ using System.ServiceProcess;
 using System.Threading.Tasks;
 using Pql.Engine.Interfaces;
 using StructureMap;
-using StructureMap.Graph;
 
 namespace Pql.IntegrationStubs
 {
     public class ProgramBase
     {
         protected static ITracer Tracer;
+        private static Container s_objectFactory;
 
         protected static int MainImpl(string[] args, params Assembly[] assemblies)
         {
@@ -18,7 +18,7 @@ namespace Pql.IntegrationStubs
             InitializeUnobservedExceptionHandler();
             InitializeContainer(assemblies);
 
-            var arguments = ObjectFactory.GetInstance<IHostedProcessArgs>();
+            var arguments = s_objectFactory.GetInstance<IHostedProcessArgs>();
             if (arguments.IsInteractive)
             {
                 if (arguments.Help)
@@ -41,12 +41,12 @@ namespace Pql.IntegrationStubs
                 }
                 else
                 {
-                    ObjectFactory.GetInstance<WindowsHostService>().RunInteractive(args);
+                    s_objectFactory.GetInstance<WindowsHostService>().RunInteractive(args);
                 }
             }
             else
             {
-                ServiceBase.Run(ObjectFactory.GetInstance<WindowsHostService>());
+                ServiceBase.Run(s_objectFactory.GetInstance<WindowsHostService>());
             }
 
             return 0;
@@ -54,7 +54,7 @@ namespace Pql.IntegrationStubs
 
         private static void InitializeContainer(params Assembly[] assemblies)
         {
-            ObjectFactory.Initialize(
+            s_objectFactory = new Container(
                 x => x.Scan(
                     scanner =>
                         {
@@ -70,14 +70,14 @@ namespace Pql.IntegrationStubs
                             }
                             //scanner.AssembliesFromApplicationBaseDirectory(
                             //    assembly =>
-                            //    assembly.FullName.StartsWith("Thinksmart.", StringComparison.InvariantCultureIgnoreCase));
+                            //    assembly.FullName.StartsWith("mycompany.", StringComparison.InvariantCultureIgnoreCase));
 
                             //if (Directory.Exists("Processes"))
                             //{
                             //    scanner.AssembliesFromPath(
                             //        "Processes",
                             //        assembly =>
-                            //        assembly.FullName.StartsWith("Thinksmart.", StringComparison.InvariantCultureIgnoreCase));
+                            //        assembly.FullName.StartsWith("mycompany.", StringComparison.InvariantCultureIgnoreCase));
                             //}
 
                             scanner.LookForRegistries();
@@ -92,7 +92,7 @@ namespace Pql.IntegrationStubs
 
             //if (String.IsNullOrWhiteSpace(applicationName))
             //{
-            //    applicationName = "Thinksmart.WindowsHost";
+            //    applicationName = "mycompany.WindowsHost";
             //}
 
             //var loggerConfigPath = ConfigurationManager.AppSettings["LoggerPath"];
