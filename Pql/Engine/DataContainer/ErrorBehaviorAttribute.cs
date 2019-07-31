@@ -51,8 +51,7 @@ namespace Pql.Engine.DataContainer
 
             foreach (var channelDispatcherBase in serviceHostBase.ChannelDispatchers)
             {
-                var channelDispatcher = channelDispatcherBase as ChannelDispatcher;
-                if (channelDispatcher != null)
+                if (channelDispatcherBase is ChannelDispatcher channelDispatcher)
                 {
                     channelDispatcher.ErrorHandlers.Add(errorHandler);
                 }

@@ -75,8 +75,7 @@ namespace Pql.Engine.DataContainer
                 throw new ArgumentNullException("message");
             }
 
-            var pqlMessage = message as PqlMessage;
-            if (pqlMessage == null)
+            if (!(message is PqlMessage pqlMessage))
             {
                 throw new Exception(string.Format("Invalid message type, expected {0}, got {1}",
                     typeof(PqlMessage).AssemblyQualifiedName, message.GetType().AssemblyQualifiedName));

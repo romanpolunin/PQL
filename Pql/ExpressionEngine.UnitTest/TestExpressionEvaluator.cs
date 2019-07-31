@@ -81,7 +81,7 @@ namespace Pql.ExpressionEngine.UnitTest
 
             Console.WriteLine(s_elapsedMilliseconds);
             Console.WriteLine(s_totalOperations);
-            Console.WriteLine(((double) s_totalOperations) * 1000 / (s_elapsedMilliseconds));
+            Console.WriteLine(((double) s_totalOperations) * 1000 / s_elapsedMilliseconds);
         }
 
         [TestMethod]
@@ -689,6 +689,58 @@ namespace Pql.ExpressionEngine.UnitTest
             Assert.AreEqual(1, Eval<UnboxableNullable<int>, UnboxableNullable<decimal>>("1 + @context", 0.Null()));
             Assert.AreEqual(2, Eval<UnboxableNullable<int>, UnboxableNullable<decimal>>("1 + @context", 1));
             Assert.AreEqual(1, Eval<UnboxableNullable<int>, UnboxableNullable<decimal>>("@context", 1).Value);
+        }
+
+        [TestMethod]
+        public void TestCoalesce()
+        {
+            Assert.AreEqual(1, Eval<int>("coalesce(1, 2)"));
+            Assert.AreEqual(null, Eval<string>("coalesce('', '')"));
+            Assert.AreEqual(null, Eval<string>("coalesce('', '')"));
+            Assert.AreEqual("a", Eval<string>("coalesce('', 'a', 'c')"));
+            Assert.AreEqual("b", Eval<string>("coalesce('b', 'a')"));
+
+            Assert.AreEqual(1, Eval<UnboxableNullable<int>, int>("coalesce(@context, 1)", 0.Null()));
+            Assert.AreEqual(2, Eval<UnboxableNullable<int>, int>("coalesce(@context, 0, 2)", 0.Null()));
+            Assert.AreEqual(0, Eval<UnboxableNullable<int>, int>("coalesce(@context, 0, 2)", 0));
+            Assert.AreEqual(0, Eval<UnboxableNullable<int>, int>("coalesce(0, @context, 2)", 0));
+            Assert.AreEqual(2, Eval<int, int>("coalesce(0, @context, 2)", 0));
+            Assert.AreEqual(2, Eval<int, int>("coalesce(@context, 0, 2)", 0));
+            Assert.AreEqual(2, Eval<int, int>("coalesce(0, @context)", 2));
+            Assert.AreEqual(1, Eval<UnboxableNullable<int>, int>("coalesce(@context, 0, 2)", 1));
+
+            Assert.AreEqual(2, ((Func<int, UnboxableNullable<int>, UnboxableNullable<int>>)m_runtime.Compile(
+                "coalesce(@val1, @val2)", 
+                typeof(UnboxableNullable<int>),
+                new Tuple<string, Type>("@val1", typeof(int)),
+                new Tuple<string, Type>("@val2", typeof(UnboxableNullable<int>))
+                ))(0, 2));
+
+            Assert.AreEqual(1, ((Func<UnboxableNullable<int>, UnboxableNullable<int>, UnboxableNullable<int>>)m_runtime.Compile(
+                "coalesce(@val1, @val2)", 
+                typeof(UnboxableNullable<int>),
+                new Tuple<string, Type>("@val1", typeof(UnboxableNullable<int>)),
+                new Tuple<string, Type>("@val2", typeof(UnboxableNullable<int>))
+                ))(1, 2));
+
+            Assert.AreEqual(2, ((Func<UnboxableNullable<int>, UnboxableNullable<int>, UnboxableNullable<int>>)
+                m_runtime.Compile("coalesce(@val1, @val2)",
+                typeof(UnboxableNullable<int>),
+                new Tuple<string, Type>("@val1", typeof(UnboxableNullable<int>)),
+                new Tuple<string, Type>("@val2", typeof(UnboxableNullable<int>))
+                ))(0.Null(), 2));
+
+            Assert.AreEqual(3, ((Func<UnboxableNullable<int>, UnboxableNullable<int>, int, int>)
+                m_runtime.Compile("coalesce(@val1, @val2, @val3)",
+                typeof(int),
+                new Tuple<string, Type>("@val1", typeof(UnboxableNullable<int>)),
+                new Tuple<string, Type>("@val2", typeof(UnboxableNullable<int>)),
+                new Tuple<string, Type>("@val3", typeof(int))
+                ))(0.Null(), 0.Null(), 3));
+
+            Assert.AreEqual("2", Eval<string, string>("coalesce(@context, Default('string'), '2')", ""));
+            Assert.AreEqual("2", Eval<string, string>("coalesce(@context, '', '2')", ""));
+            Assert.AreEqual("one", Eval<string, string>("coalesce(@context, '', '2')", "one"));
         }
 
         [TestMethod]

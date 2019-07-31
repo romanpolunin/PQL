@@ -266,9 +266,8 @@ namespace Pql.ClientDriver
                 responseMessage = channel.Process(requestMessage);
             }
 
-            var pqlMessage = responseMessage as PqlMessage;
 
-            if (pqlMessage != null)
+            if (responseMessage is PqlMessage pqlMessage)
             {
                 return pqlMessage;
             }

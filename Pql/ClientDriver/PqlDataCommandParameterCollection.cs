@@ -391,8 +391,7 @@ namespace Pql.ClientDriver
                 throw new ArgumentNullException("value");
             }
 
-            var typed = value as PqlDataCommandParameter;
-            if (typed == null)
+            if (!(value is PqlDataCommandParameter typed))
             {
                 throw new ArgumentException("Invalid parameter instance type: " + value.GetType().FullName);
             }

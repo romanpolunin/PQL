@@ -962,19 +962,19 @@ namespace Pql.ExpressionEngine.Compiler
             var count = (int) (countProperty.GetValue(matchingSet));
 
             Expression contains;
-            var leftArgConst = leftExpr as ConstantExpression;
-            if (leftArgConst != null)
+            if (leftExpr is ConstantExpression leftArgConst)
             {
                 // since list is constant and argument is constant, let's just evaluate it
                 var setContainsMethod = ReflectionHelper.GetOrAddMethod1(matchingSet.GetType(), "Contains", leftExpr.Type);
-                
+
                 try
                 {
-                    contains = Expression.Constant(setContainsMethod.Invoke(matchingSet, new[] {leftArgConst.Value}), typeof(bool));
+                    contains = Expression.Constant(setContainsMethod.Invoke(matchingSet, new[] { leftArgConst.Value }), typeof(bool));
                 }
                 catch (TargetInvocationException e)
                 {
-                    if (e.InnerException == null) throw;
+                    if (e.InnerException == null)
+                        throw;
                     throw e.InnerException;
                 }
             }
@@ -994,14 +994,15 @@ namespace Pql.ExpressionEngine.Compiler
                     }
                     catch (TargetInvocationException e)
                     {
-                        if (e.InnerException == null) throw;
+                        if (e.InnerException == null)
+                            throw;
                         throw e.InnerException;
                     }
 
                     contains = null;
                     while (enumerator.MoveNext())
                     {
-                        var next = isString 
+                        var next = isString
                             ? PrepareStringEquality(rightNodeList, leftExpr, Expression.Constant(enumerator.Current, leftExpr.Type))
                             : Expression.Equal(leftExpr, Expression.Constant(enumerator.Current, leftExpr.Type));
                         contains = contains == null ? next : Expression.OrElse(contains, next);

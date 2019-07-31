@@ -45,6 +45,7 @@ namespace Pql.ExpressionEngine.Compiler
             RegisterAtom(new AtomMetadata(AtomType.Identifier, "true", PredefinedAtom_True));
             RegisterAtom(new AtomMetadata(AtomType.Function, "IsDefault", PredefinedAtom_IsDefault));
             RegisterAtom(new AtomMetadata(AtomType.Function, "Default", PredefinedAtom_Default));
+            RegisterAtom(new AtomMetadata(AtomType.Function, "Coalesce", PredefinedAtom_Coalesce));
             RegisterAtom(new AtomMetadata(AtomType.Identifier, "PositiveInfinity", PredefinedAtom_PositiveInfinity));
             RegisterAtom(new AtomMetadata(AtomType.Identifier, "NegativeInfinity", PredefinedAtom_NegativeInfinity));
             RegisterAtom(new AtomMetadata(AtomType.Identifier, "NaN", PredefinedAtom_NaN));
@@ -136,8 +137,7 @@ namespace Pql.ExpressionEngine.Compiler
             else
             {
                 // now only reference types remaining
-                var constantExpression = argument as ConstantExpression;
-                if (constantExpression != null)
+                if (argument is ConstantExpression constantExpression)
                 {
                     result = ReferenceEquals(constantExpression.Value, null) ? ifnull : argument;
                 }
@@ -180,6 +180,59 @@ namespace Pql.ExpressionEngine.Compiler
         {
             root.RequireChildren(1);
             return Expression.Constant(true);
+        }
+
+
+        /// <summary>
+        /// Returns first argument if it's not null and not equal to default value for that type.
+        /// Returns second argument otherwise.
+        /// Type of second argument must be adjustable to the type of first argument.
+        /// </summary>
+        public static Expression PredefinedAtom_Coalesce(ParseTreeNode root, CompilerState state)
+        {
+            // cannot supply more than twenty alternative options, must supply at least one
+            var funArgs = ExpressionTreeExtensions.UnwindTupleExprList(root.RequireChild("exprList", 1, 0));
+            funArgs.RequireChildren(2, 21);
+
+            var lastNode = funArgs.RequireChild(null, funArgs.ChildNodes.Count - 1);
+            var lastValue = state.ParentRuntime.Analyze(lastNode, state);
+            lastValue.RequireNonVoid(lastNode);
+
+            var result = lastValue;
+            for (var i = funArgs.ChildNodes.Count - 2; i >= 0; i--)
+            {
+                var thisNode = funArgs.RequireChild(null, i);
+                var thisValue = state.ParentRuntime.Analyze(thisNode, state);
+                thisValue.RequireNonVoid(thisNode);
+
+                var isDefault = IsDefault(thisNode, thisValue);
+                if (thisValue.IsNullableType() && !result.IsNullableType())
+                {
+                    result = ExpressionTreeExtensions.MakeNewNullable(result);
+                }
+                else if (!thisValue.IsNullableType() && result.IsNullableType())
+                {
+                    thisValue = ExpressionTreeExtensions.MakeNewNullable(thisValue);
+                }
+                result = Expression.Condition(isDefault, result, thisValue);
+            }
+
+            return result;
+        }
+
+        private static Expression IsDefault(ParseTreeNode root, Expression value)
+        {
+            if (value.IsString())
+            {
+                if (value is ConstantExpression)
+                {
+                    return Expression.Constant(string.IsNullOrEmpty((string)((ConstantExpression)value).Value), typeof(Boolean));
+                }
+
+                return Expression.Call(ReflectionHelper.StringIsNullOrEmpty, value);
+            }
+
+            return ConstantHelper.TryEvalConst(root, value, Expression.Default(value.Type), ExpressionType.Equal);
         }
 
         private static Expression PredefinedAtom_IsDefault(ParseTreeNode root, CompilerState state)

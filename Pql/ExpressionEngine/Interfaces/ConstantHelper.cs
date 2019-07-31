@@ -184,13 +184,10 @@ namespace Pql.ExpressionEngine.Interfaces
             {
                 throw new ArgumentNullException("right");
             }
-
-            var x = left as ConstantExpression;
-            var y = right as ConstantExpression;
             try
             {
-                return x == null || y == null
-                           ? (Expression) Expression.MakeBinary(op, left, right)
+                return !(left is ConstantExpression x) || !(right is ConstantExpression y)
+                           ? (Expression)Expression.MakeBinary(op, left, right)
                            : EvalConst(root, x, y, op, returnType);
             }
             catch (InvalidOperationException e)
@@ -269,8 +266,7 @@ namespace Pql.ExpressionEngine.Interfaces
 
             try
             {
-                var constant = left as ConstantExpression;
-                return constant == null ? Expression.MakeUnary(op, left, returnType ?? left.Type) : (Expression) EvalConst(root, constant, op, returnType);
+                return !(left is ConstantExpression constant) ? Expression.MakeUnary(op, left, returnType ?? left.Type) : (Expression)EvalConst(root, constant, op, returnType);
             }
             catch (InvalidOperationException e)
             {

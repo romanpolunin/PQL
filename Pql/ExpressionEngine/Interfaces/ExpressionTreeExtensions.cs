@@ -924,6 +924,33 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// Generates an expression of type Nullable(T), given its underlying value.
         /// </summary>
+        public static Expression MakeNewNullable(Expression value)
+        {
+            if (value == null)
+            {
+                throw new ArgumentNullException("value");
+            }
+
+            var nullableType = typeof(UnboxableNullable<>).MakeGenericType(value.Type);
+            var constructorInfo = nullableType.GetConstructor(new[] { value.Type });
+            if (constructorInfo == null)
+            {
+                throw new Exception(string.Format("Could not locate constructor on type {0} with a single argument of type {1}",
+                    nullableType.FullName, value.Type.FullName));
+            }
+
+            if (value is ConstantExpression expression)
+            {
+                var constValue = constructorInfo.Invoke(new[] { expression.Value });
+                return Expression.Constant(constValue, nullableType);
+            }
+
+            return Expression.New(constructorInfo, value);
+        }
+
+        /// <summary>
+        /// Generates an expression of type Nullable(T), given its underlying value.
+        /// </summary>
         public static Expression MakeNewNullable(Type nullabletype, Expression value)
         {
             if (nullabletype == null)
@@ -943,10 +970,9 @@ namespace Pql.ExpressionEngine.Interfaces
                     nullabletype.FullName, value.Type.FullName));
             }
 
-            var expression = value as ConstantExpression;
-            if (expression != null)
+            if (value is ConstantExpression expression)
             {
-                var constValue = constructorInfo.Invoke(new[] {expression.Value});
+                var constValue = constructorInfo.Invoke(new[] { expression.Value });
                 return Expression.Constant(constValue, nullabletype);
             }
 
@@ -994,8 +1020,7 @@ namespace Pql.ExpressionEngine.Interfaces
                 if (!expr.IsRealNumeric() || !targetType.IsInteger())
                 {
                     // only attempt to auto-convert constants
-                    var constExpr = expr as ConstantExpression;
-                    if (constExpr != null)
+                    if (expr is ConstantExpression constExpr)
                     {
                         try
                         {

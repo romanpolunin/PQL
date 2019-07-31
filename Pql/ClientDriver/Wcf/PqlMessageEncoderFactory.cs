@@ -135,12 +135,11 @@ namespace Pql.ClientDriver.Wcf
                     throw new ArgumentNullException("message");
                 }
 
-                var pqlMessage = message as PqlMessage;
-                if (pqlMessage == null)
+                if (!(message is PqlMessage pqlMessage))
                 {
                     throw new Exception("This encoder only supports messages of type " + typeof(PqlMessage).AssemblyQualifiedName);
                 }
-                
+
                 try
                 {
                     pqlMessage.WriteHeaders(stream);
