@@ -102,7 +102,7 @@ namespace Pql.ExpressionEngine.Grammar
 
         private BnfTerm CreateSqlExtIdentifier(string name)
         {
-            var identifierTerminal = new IdentifierTerminal(name, null, "@");
+            var identifierTerminal = new IdentifierTerminal(name, "_", "@_");
             var stringLiteral = new StringLiteral(name + "_quoted");
             stringLiteral.AddStartEnd("[", "]", StringOptions.NoEscapes);
             stringLiteral.AddStartEnd("\"", StringOptions.NoEscapes);

@@ -298,14 +298,14 @@ namespace Pql.ExpressionEngine.UnitTest
             Assert.IsTrue(eval4(1.5f));
             Assert.IsFalse(eval4(1.4f));
 
-            eval4 = (Func<Single, bool>)m_runtime.Compile("case @arg1 WHEN -1 then true WHEN cast(1+0.5,'Single') then true END", 
-                typeof(Boolean), new Tuple<string, Type>("@arg1", typeof(Single)));
+            eval4 = (Func<Single, bool>)m_runtime.Compile("case @arg_1 WHEN -1 then true WHEN cast(1+0.5,'Single') then true END", 
+                typeof(Boolean), new Tuple<string, Type>("@arg_1", typeof(Single)));
             Assert.IsTrue(eval4(1.5f));
             Assert.IsFalse(eval4(1.4f));
             Assert.IsTrue(eval4(-1f));
 
-            eval4 = (Func<Single, bool>)m_runtime.Compile("case case (@arg1) WHEN -1 then true WHEN (cast(1+0.5,'Single')) THEN true END WHEN true THEN false ELSE true end", 
-                typeof(Boolean), new Tuple<string, Type>("@arg1", typeof(Single)));
+            eval4 = (Func<Single, bool>)m_runtime.Compile("case case (@_arg1) WHEN -1 then true WHEN (cast(1+0.5,'Single')) THEN true END WHEN true THEN false ELSE true end", 
+                typeof(Boolean), new Tuple<string, Type>("@_arg1", typeof(Single)));
             Assert.IsFalse(eval4(1.5f));
             Assert.IsTrue(eval4(1.4f));
             Assert.IsFalse(eval4(-1f));
@@ -447,10 +447,10 @@ namespace Pql.ExpressionEngine.UnitTest
         public void TestRuntimeExtensions()
         {
             Func<string, string, bool> customEndsWith = (s1, s2) => s1 != null && s2 != null && s1.EndsWith(s2, StringComparison.OrdinalIgnoreCase);
-            m_runtime.RegisterAtom(new AtomMetadata(AtomType.Function, "CustomEndsWith", customEndsWith));
+            m_runtime.RegisterAtom(new AtomMetadata(AtomType.Function, "Custom_EndsWith", customEndsWith));
 
             var eval = (Func<string, string, bool>) m_runtime.Compile(
-                "CustomEndsWith(@arg1, @arg2)", typeof (bool), 
+                "Custom_EndsWith(@arg1, @arg2)", typeof (bool), 
                 new Tuple<string, Type>("@arg1", typeof (string)),
                 new Tuple<string, Type>("@arg2", typeof(string)));
 
@@ -458,10 +458,10 @@ namespace Pql.ExpressionEngine.UnitTest
             Assert.IsFalse(eval("abcde", "ee"));
 
             Func<SomeDataObject, int, string> getProperty = (c, ix) => c.StringValues == null ? null : c.StringValues[ix];
-            m_runtime.RegisterAtom(new AtomMetadata(AtomType.Function, "StringArr", getProperty));
+            m_runtime.RegisterAtom(new AtomMetadata(AtomType.Function, "_StringArr", getProperty));
 
             var data = new SomeDataObject {StringValues = new [] {"aa", "bb"}};
-            var result = Eval<SomeDataObject, string>("StringArr(@context, 0)", data);
+            var result = Eval<SomeDataObject, string>("_StringArr(@context, 0)", data);
             Assert.AreEqual(result, "aa");
 
             Func<string[], int, string> getStringArrayItem = (c, ix) => c == null ? null : c[ix];
