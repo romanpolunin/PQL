@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -414,7 +413,11 @@ namespace Pql.ExpressionEngine.Compiler
                 if ((targetType.IsNumeric() || targetType.IsDateTime() || targetType.IsTimeSpan() || targetType.IsGuid()))
                 {
                     var parseMethod = ReflectionHelper.GetOrAddMethod1(targetType, "Parse", value.Type);
-                    return ConstantHelper.TryEvalConst(root, parseMethod, value);
+                    return Expression.Condition(
+                        ConstantHelper.TryEvalConst(root, ReflectionHelper.StringIsNullOrEmpty, value),
+                        Expression.Default(targetType),
+                        ConstantHelper.TryEvalConst(root, parseMethod, value)
+                        );
                 }
             }
 

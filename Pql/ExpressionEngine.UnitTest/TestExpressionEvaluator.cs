@@ -504,6 +504,16 @@ namespace Pql.ExpressionEngine.UnitTest
             
             Assert.AreEqual(1L + 2L, add(1L, 2L));
 
+            var addWithConvert = (Func<long, string, long>) 
+                m_runtime.Compile("@Arg1 + CONVERT(@Arg2, 'Int64')",
+                typeof(long),
+                new Tuple<string, Type>("@arg1", typeof(long)),
+                new Tuple<string, Type>("@arg2", typeof(string)));
+            
+            Assert.AreEqual(1L + 0L, addWithConvert(1L, ""));
+            Assert.AreEqual(1L + 0L, addWithConvert(1L, null));
+            Assert.AreEqual(1L + 2L, addWithConvert(1L, "2"));
+
             var concat = (Func<string, long, string>) 
                 m_runtime.Compile("@Arg1 + Convert(@Arg2, 'string')",
                 typeof(string),
