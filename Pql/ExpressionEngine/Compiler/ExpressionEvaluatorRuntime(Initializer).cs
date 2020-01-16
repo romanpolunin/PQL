@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
@@ -205,14 +205,33 @@ namespace Pql.ExpressionEngine.Compiler
                 thisValue.RequireNonVoid(thisNode);
 
                 var isDefault = IsDefault(thisNode, thisValue);
-                if (thisValue.IsNullableType() && !result.IsNullableType())
+                var isNullable = thisValue.IsNullableType() || result.IsNullableType();
+
+                ExpressionTreeExtensions.TryEnsureBothNullable(ref thisValue, ref result);
+
+                if (result.Type.IsExplicitCastRequired(thisValue.Type))
                 {
-                    result = ExpressionTreeExtensions.MakeNewNullable(result);
+                    if (isNullable)
+                    {
+                        result = ExpressionTreeExtensions.ConvertNullable(result, thisValue.Type);
+                    }
+                    else
+                    {
+                        result = Expression.Convert(result, thisValue.Type);
+                    }
                 }
-                else if (!thisValue.IsNullableType() && result.IsNullableType())
+                else if (thisValue.Type.IsExplicitCastRequired(result.Type))
                 {
-                    thisValue = ExpressionTreeExtensions.MakeNewNullable(thisValue);
+                    if (isNullable)
+                    {
+                        thisValue = ExpressionTreeExtensions.ConvertNullable(thisValue, result.Type);
+                    }
+                    else
+                    {
+                        thisValue = Expression.Convert(thisValue, result.Type);
+                    }
                 }
+
                 result = Expression.Condition(isDefault, result, thisValue);
             }
 
@@ -240,7 +259,7 @@ namespace Pql.ExpressionEngine.Compiler
             funArgs.RequireChildren(1);
 
             var arg1Node = funArgs.ChildNodes[0];
-            var value = state.ParentRuntime.Analyze(arg1Node, state).RemoveNullability();
+            var value = state.ParentRuntime.Analyze(arg1Node, state);
 
             if (value.IsString())
             {

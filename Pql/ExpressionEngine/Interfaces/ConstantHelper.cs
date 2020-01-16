@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Irony.Parsing;
 
 namespace Pql.ExpressionEngine.Interfaces
@@ -342,6 +343,24 @@ namespace Pql.ExpressionEngine.Interfaces
             {
                 throw new CompilationException(e.Message, root);
             }
+        }
+
+        /// <summary>
+        /// Invokes specified binary operation
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static K InvokeBinaryOperation<T, K>(ExpressionType expressionType, T v1, T v2)
+        {
+            return (K)ConstantHelper.EvalConst(null, Expression.Constant(v1), Expression.Constant(v2), expressionType, typeof(K)).Value;
+        }
+
+        /// <summary>
+        /// Invokes specified binary operation
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T InvokeBinaryOperation<T>(ExpressionType expressionType, T v1, T v2)
+        {
+            return InvokeBinaryOperation<T, T>(expressionType, v1, v2);
         }
     }
 }

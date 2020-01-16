@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Irony.Parsing;
+using Pql.ExpressionEngine.Utilities;
 
 namespace Pql.ExpressionEngine.Interfaces
 {
@@ -45,7 +46,6 @@ namespace Pql.ExpressionEngine.Interfaces
         /// </summary>
         public struct VoidTypeMarker
         {
-             
         }
 
         /// <summary>
@@ -419,7 +419,7 @@ namespace Pql.ExpressionEngine.Interfaces
                 throw new ArgumentNullException("target");
             }
 
-            return Numerics.Contains(target.Type);
+            return Numerics.Contains(target.Type.IsNullableType() ? target.Type.GetUnderlyingType() : target.Type);
         }
 
         /// <summary>
@@ -530,7 +530,7 @@ namespace Pql.ExpressionEngine.Interfaces
                 throw new ArgumentNullException("target");
             }
 
-            return ReferenceEquals(target.Type, typeof(DateTime));
+            return ReferenceEquals(target.Type.IsNullableType() ? target.Type.GetUnderlyingType() : target.Type, typeof(DateTime));
         }
 
         /// <summary>
@@ -560,7 +560,7 @@ namespace Pql.ExpressionEngine.Interfaces
                 throw new ArgumentNullException("target");
             }
 
-            return ReferenceEquals(target.Type, typeof(DateTimeOffset));
+            return ReferenceEquals(target.Type.IsNullableType() ? target.Type.GetUnderlyingType() : target.Type, typeof(DateTimeOffset));
         }
 
         /// <summary>
@@ -620,7 +620,7 @@ namespace Pql.ExpressionEngine.Interfaces
                 throw new ArgumentNullException("target");
             }
 
-            return ReferenceEquals(target.Type, typeof(TimeSpan));
+            return ReferenceEquals(target.Type.IsNullableType() ? target.Type.GetUnderlyingType() : target.Type, typeof(TimeSpan));
         }
 
         /// <summary>
@@ -745,6 +745,19 @@ namespace Pql.ExpressionEngine.Interfaces
                        : expression;
         }
 
+        /// <summary>
+        /// If supplied expression is of Nullable(T) type, invokes its HasValue method.
+        /// </summary>
+        public static Expression NullableHasValue(this Expression expression)
+        {
+            if (!expression.IsNullableType())
+            {
+                return expression;
+            }
+            
+            return ConstantHelper.TryEvalConst(null, expression.Type.GetField("HasValue"), expression);
+        }
+        
         /// <summary>
         /// Attempts to auto-adjust the size of arguments for a binary arithmetic operation. 
         /// Integers grow up to Int64, Double or Decimal, floats grow up to Decimal. 
@@ -949,6 +962,32 @@ namespace Pql.ExpressionEngine.Interfaces
         }
 
         /// <summary>
+        /// Generate expression to convert nullable<T> to nullable<toType>
+        /// </summary>
+        public static Expression ConvertNullable(Expression value, Type toType)
+        {
+            if (value == null)
+            {
+                throw new ArgumentNullException("value");
+            }
+
+            if (!value.Type.IsNullableType())
+            {
+                throw new ArgumentException("value must be nullable type");
+            }
+
+            if (!toType.IsNullableType())
+            {
+                throw new ArgumentException("toType must be nullable type");
+            }
+
+            var changeTypeMethod = typeof(Convert).GetMethod("ChangeType", new Type[] { typeof(object), typeof(Type) });
+            var callExpressionReturningObject = Expression.Call(changeTypeMethod, Expression.Convert(value, typeof(object)), Expression.Constant(toType));
+
+            return Expression.Convert(callExpressionReturningObject, toType);
+        }
+        
+        /// <summary>
         /// Generates an expression of type Nullable(T), given its underlying value.
         /// </summary>
         public static Expression MakeNewNullable(Type nullabletype, Expression value)
@@ -1139,6 +1178,76 @@ namespace Pql.ExpressionEngine.Interfaces
             else if (y.IsVoid())
             {
                 y = GetDefaultExpression(x.Type.GetUnderlyingType());
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// If one of the arguments is a nullable expression, and second is not, will try to cast second argument to nullable
+        /// Returns false if both arguments are not nullable.
+        /// </summary>
+        public static bool TryEnsureBothNullable(ref Expression x, ref Expression y)
+        {
+            if (x == null)
+            {
+                throw new ArgumentNullException("x");
+            }
+
+            if (y == null)
+            {
+                throw new ArgumentNullException("y");
+            }
+
+            if (x.IsNullableType() && !y.IsNullableType())
+            {
+                y = MakeNewNullable(y);
+            }
+            else if (!x.IsNullableType() && y.IsNullableType())
+            {
+                x = MakeNewNullable(x);
+            }
+
+            return x.IsNullableType();
+        }
+
+        /// <summary>
+        /// Try to convert Nullable<T> to Nullable<K> if possible.
+        /// Returns false if conversion is not possible.
+        /// </summary>
+        public static bool TryAdjustNullable(ref Expression x, ref Expression y)
+        {
+            if (x == null)
+            {
+                throw new ArgumentNullException("x");
+            }
+
+            if (y == null)
+            {
+                throw new ArgumentNullException("y");
+            }
+
+            if (!x.IsNullableType())
+            {
+                throw new ArgumentException("x is not nullable");
+            }
+
+            if (!y.IsNullableType())
+            {
+                throw new ArgumentException("y is not nullable");
+            }
+
+            if (x.Type.IsExplicitCastRequired(y.Type))
+            {
+                x = ConvertNullable(x, y.Type);
+            }
+            else if (y.Type.IsExplicitCastRequired(x.Type))
+            {
+                y = ConvertNullable(y, x.Type);
+            }
+            else
+            {
+                return false;
             }
 
             return true;

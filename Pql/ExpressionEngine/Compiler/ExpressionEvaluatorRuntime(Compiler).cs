@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using Irony.Parsing;
 using Pql.ExpressionEngine.Interfaces;
+using Pql.ExpressionEngine.Utilities;
 
 namespace Pql.ExpressionEngine.Compiler
 { 
@@ -696,8 +697,13 @@ namespace Pql.ExpressionEngine.Compiler
 
             Expression expr;
 
-            leftExpr = leftExpr.RemoveNullability();
-            rightExpr = rightExpr.RemoveNullability();
+            if (ExpressionTreeExtensions.TryEnsureBothNullable(ref leftExpr, ref rightExpr)
+                && !ExpressionTreeExtensions.TryAdjustNullable(ref leftExpr, ref rightExpr))
+            {
+                // if adjust nullable is not possible then fallback to previous logic - remove nullability
+                leftExpr.RemoveNullability();
+                rightExpr.RemoveNullability();
+            }
 
             if (leftExpr.IsDateTime() && rightExpr.IsDateTime()
                 || leftExpr.IsTimeSpan() && rightExpr.IsTimeSpan())
