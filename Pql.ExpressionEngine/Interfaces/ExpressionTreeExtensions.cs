@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 
 using Irony.Parsing;
 
+#pragma warning disable IDE0049
 namespace Pql.ExpressionEngine.Interfaces
 {
     /// <summary>
@@ -12,7 +13,7 @@ namespace Pql.ExpressionEngine.Interfaces
     /// </summary>
     public static class ExpressionTreeExtensions
     {
-        private static readonly List<Type> Numerics = new()
+        private static readonly List<Type> s_numerics = new()
         {
             typeof(SByte),
             typeof(Byte),
@@ -27,7 +28,7 @@ namespace Pql.ExpressionEngine.Interfaces
             typeof(Decimal)
         };
 
-        private static readonly List<Type> Integers = new()
+        private static readonly List<Type> s_integers = new()
         {
             typeof(Byte),
             typeof(SByte),
@@ -72,7 +73,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <returns>The lowest parse tree node</returns>
         /// <exception cref="ArgumentNullException"><paramref name="root"/> is null</exception>
         /// <exception cref="CompilationException">Child is absent at some level, or lead child's term name does not match <paramref name="leafTermName"/></exception> 
-        public static ParseTreeNode RequireChild(this ParseTreeNode? root, string? leafTermName, params int[] childIndexes)
+        public static ParseTreeNode RequireChild(this ParseTreeNode root, string? leafTermName, params int[] childIndexes)
         {
             if (root == null)
             {
@@ -83,7 +84,7 @@ namespace Pql.ExpressionEngine.Interfaces
             {
                 if (root == null || root.ChildNodes.Count <= index)
                 {
-                    throw new CompilationException(String.Format("Node {0} is expected to have at least {1} children", root, index + 1), root);
+                    throw new CompilationException($"Node {root} is expected to have at least {index + 1} children", root);
                 }
 
                 root = root.ChildNodes[index];
@@ -93,7 +94,7 @@ namespace Pql.ExpressionEngine.Interfaces
             {
                 if (root.Term == null || 0 != StringComparer.OrdinalIgnoreCase.Compare(root.Term.Name, leafTermName))
                 {
-                    throw new CompilationException(String.Format("Expected {0} instead of {1}", leafTermName, root), root);
+                    throw new CompilationException($"Expected {leafTermName} instead of {root}", root);
                 }
             }
 
@@ -222,12 +223,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsInteger(this Expression target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return IsInteger(target.Type);
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : IsInteger(target.Type);
         }
 
         /// <summary>
@@ -237,12 +235,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsInteger(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return Integers.Contains(target);
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : s_integers.Contains(target);
         }
 
         /// <summary>
@@ -252,12 +247,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsRealNumeric(this Expression target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return IsRealNumeric(target.Type);
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : IsRealNumeric(target.Type);
         }
 
         /// <summary>
@@ -267,12 +259,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsRealNumeric(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return target == typeof(Single) || target == typeof(Double) || target == typeof(Decimal);
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : target == typeof(Single) || target == typeof(Double) || target == typeof(Decimal);
         }
 
         /// <summary>
@@ -303,12 +292,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsBoolean(this Expression target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return IsBoolean(target.Type);
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : IsBoolean(target.Type);
         }
 
         /// <summary>
@@ -318,12 +304,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsBoolean(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return ReferenceEquals(target, typeof(Boolean));
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : ReferenceEquals(target, typeof(Boolean));
         }
 
         /// <summary>
@@ -413,12 +396,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsNumeric(this Expression target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return Numerics.Contains(target.Type);
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : s_numerics.Contains(target.Type);
         }
 
         /// <summary>
@@ -428,12 +408,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsNumeric(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return Numerics.Contains(target);
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : s_numerics.Contains(target);
         }
 
         /// <summary>
@@ -443,12 +420,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsBinary(this Expression target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return IsBinary(target.Type);
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : IsBinary(target.Type);
         }
 
         /// <summary>
@@ -458,12 +432,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsBinary(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return ReferenceEquals(target, typeof(SizableArrayOfByte));
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : ReferenceEquals(target, typeof(SizableArrayOfByte));
         }
 
         /// <summary>
@@ -494,12 +465,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsString(this Expression target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return IsString(target.Type);
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : IsString(target.Type);
         }
 
         /// <summary>
@@ -509,12 +477,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsString(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return ReferenceEquals(target, typeof(String));
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : ReferenceEquals(target, typeof(String));
         }
 
         /// <summary>
@@ -524,12 +489,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsDateTime(this Expression target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return ReferenceEquals(target.Type, typeof(DateTime));
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : ReferenceEquals(target.Type, typeof(DateTime));
         }
 
         /// <summary>
@@ -539,12 +501,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsDateTime(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return ReferenceEquals(target, typeof(DateTime));
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : ReferenceEquals(target, typeof(DateTime));
         }
 
         /// <summary>
@@ -554,12 +513,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsDateTimeOffset(this Expression target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return ReferenceEquals(target.Type, typeof(DateTimeOffset));
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : ReferenceEquals(target.Type, typeof(DateTimeOffset));
         }
 
         /// <summary>
@@ -569,12 +525,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsDateTimeOffset(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return ReferenceEquals(target, typeof(DateTimeOffset));
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : ReferenceEquals(target, typeof(DateTimeOffset));
         }
 
         /// <summary>
@@ -584,12 +537,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsTimeSpan(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return ReferenceEquals(target, typeof(TimeSpan));
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : ReferenceEquals(target, typeof(TimeSpan));
         }
 
         /// <summary>
@@ -599,12 +549,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsGuid(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return ReferenceEquals(target, typeof(Guid));
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : ReferenceEquals(target, typeof(Guid));
         }
 
         /// <summary>
@@ -614,12 +561,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsTimeSpan(this Expression target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return ReferenceEquals(target.Type, typeof(TimeSpan));
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : ReferenceEquals(target.Type, typeof(TimeSpan));
         }
 
         /// <summary>
@@ -629,12 +573,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsNullableType(this Expression target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return IsNullableType(target.Type);
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : IsNullableType(target.Type);
         }
 
         /// <summary>
@@ -644,12 +585,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsNullableType(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return target.IsConstructedGenericType && ReferenceEquals(target.GetGenericTypeDefinition(), typeof(UnboxableNullable<>));
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : target.IsConstructedGenericType && ReferenceEquals(target.GetGenericTypeDefinition(), typeof(UnboxableNullable<>));
         }
 
         /// <summary>
@@ -660,12 +598,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static Type? TryGetUnderlyingType(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return target.IsNullableType() ? UnboxableNullable.TryGetUnderlyingType(target) : target;
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : target.IsNullableType() ? UnboxableNullable.TryGetUnderlyingType(target) : target;
         }
 
         /// <summary>
@@ -676,12 +611,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static Type RequireUnderlyingType(this Type target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return target.IsNullableType() ? UnboxableNullable.RequireUnderlyingType(target) : target;
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : target.IsNullableType() ? UnboxableNullable.RequireUnderlyingType(target) : target;
         }
 
         /// <summary>
@@ -691,12 +623,9 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="ArgumentNullException"><paramref name="target"/> is null</exception>
         public static bool IsVoid(this Expression target)
         {
-            if (target == null)
-            {
-                throw new ArgumentNullException(nameof(target));
-            }
-
-            return ReferenceEquals(target.Type, typeof(UnboxableNullable<VoidTypeMarker>));
+            return target == null
+                ? throw new ArgumentNullException(nameof(target))
+                : ReferenceEquals(target.Type, typeof(UnboxableNullable<VoidTypeMarker>));
         }
 
         /// <summary>
@@ -735,11 +664,9 @@ namespace Pql.ExpressionEngine.Interfaces
             if (targetType.IsValueType)
             {
                 var ctr = targetType.GetConstructor(Array.Empty<Type>());
-                if (ctr == null)
-                {
-                    return Expression.Constant(Activator.CreateInstance(targetType, null), targetType);
-                }
-                return Expression.Constant(ctr.Invoke(null), targetType);
+                return ctr == null
+                    ? Expression.Constant(Activator.CreateInstance(targetType, null), targetType)
+                    : Expression.Constant(ctr.Invoke(null), targetType);
             }
 
             return Expression.Constant(null, targetType);
@@ -748,15 +675,13 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// If supplied expression is of Nullable(T) type, invokes its GetValueOrDefault method.
         /// </summary>
-        /// <param name="expression"></param>
-        /// <returns></returns>
         public static Expression RemoveNullability(this Expression expression)
         {
             return
                 expression.IsVoid()
                 ? expression
                 : expression.IsNullableType()
-                       ? ConstantHelper.TryEvalConst(null, expression.Type.GetField("Value"), expression)
+                       ? ConstantHelper.TryEvalConst(null, expression.Type.RequireField("Value"), expression)
                        : expression;
         }
 
@@ -849,14 +774,10 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <exception cref="CompilationException">Argument types cannot be adjusted, try conversion</exception>
         public static Expression AdjustReturnType(ParseTreeNode? root, Expression expr, Type targetType)
         {
-            if (!TryAdjustReturnType(root, expr, targetType, out var adjusted))
-            {
-                throw new CompilationException(
-                    String.Format(
-                        "Return type {0} cannot be auto-adjusted to {1}, try conversion", expr.Type.FullName, targetType.FullName), root);
-            }
-
-            return adjusted;
+            return TryAdjustReturnType(root, expr, targetType, out var adjusted)
+                ? adjusted
+                : throw new CompilationException(
+                    $"Return type {expr.Type.FullName} cannot be auto-adjusted to {targetType.FullName}, try conversion", root);
         }
 
         /// <summary>
@@ -998,17 +919,12 @@ namespace Pql.ExpressionEngine.Interfaces
         /// </summary>
         public static Expression MakeNewNullable(Type nullabletype)
         {
-            if (nullabletype == null)
-            {
-                throw new ArgumentNullException(nameof(nullabletype));
-            }
-
-            return GetDefaultExpression(nullabletype);
+            return nullabletype == null ? throw new ArgumentNullException(nameof(nullabletype)) : GetDefaultExpression(nullabletype);
         }
 
         private static bool TryAdjustNumericType(ParseTreeNode? root, Expression expr, Type targetType, out Expression? adjusted)
         {
-            if (expr.IsNumeric() && Numerics.Contains(targetType))
+            if (expr.IsNumeric() && s_numerics.Contains(targetType))
             {
                 var mySize = Marshal.SizeOf(expr.Type);
                 var targetSize = Marshal.SizeOf(targetType);
@@ -1176,7 +1092,7 @@ namespace Pql.ExpressionEngine.Interfaces
         public static Expression ForEach<TSource>(this Expression enumerable, ParameterExpression loopVar, Expression loopContent)
         {
             var enumerableType = enumerable.Type;
-            MethodInfo getEnumerator = enumerableType.GetMethod("GetEnumerator")
+            var getEnumerator = enumerableType.GetMethod("GetEnumerator")
                 ?? typeof(IEnumerable<>).MakeGenericType(typeof(TSource)).GetMethod("GetEnumerator")
                 ?? throw new Exception("Failed to find or make an enumerator method on " + typeof(TSource).FullName);
 
@@ -1227,29 +1143,26 @@ namespace Pql.ExpressionEngine.Interfaces
                 throw new Exception($"'{variableType.FullName}': type used in a using statement must be implicitly convertible to 'System.IDisposable'");
             }
 
-            var getMethod = typeof(IDisposable).GetMethod("Dispose")!;
+            var disposeMethod = typeof(IDisposable).GetMethod("Dispose")!;
 
             if (variableType.IsValueType)
             {
                 return Expression.TryFinally(
                     content,
-                    Expression.Call(Expression.Convert(variable, typeof(IDisposable)), getMethod));
+                    Expression.Call(Expression.Convert(variable, typeof(IDisposable)), disposeMethod));
             }
 
-            if (variableType.IsInterface)
-            {
-                return Expression.TryFinally(
+            return variableType.IsInterface
+                ? Expression.TryFinally(
                     content,
                     Expression.IfThen(
                         Expression.NotEqual(variable, Expression.Constant(null)),
-                        Expression.Call(variable, getMethod)));
-            }
-
-            return Expression.TryFinally(
+                        Expression.Call(variable, disposeMethod)))
+                : Expression.TryFinally(
                 content,
                 Expression.IfThen(
                     Expression.NotEqual(variable, Expression.Constant(null)),
-                    Expression.Call(Expression.Convert(variable, typeof(IDisposable)), getMethod)));
+                    Expression.Call(Expression.Convert(variable, typeof(IDisposable)), disposeMethod)));
         }
 
         public static Expression While(this Expression loopCondition, Expression loopContent)
@@ -1261,6 +1174,18 @@ namespace Pql.ExpressionEngine.Interfaces
                     loopContent,
                     Expression.Break(breakLabel)),
                 breakLabel);
+        }
+
+        public static FieldInfo RequireField(this Type type, string fieldName)
+        {
+            var field = type.GetField(fieldName);
+            return field ?? throw new ArgumentException($"Could not find field {fieldName} on type {type.FullName}");
+        }
+
+        public static PropertyInfo RequireProperty(this Type type, string propertyName)
+        {
+            var property = type.GetProperty(propertyName);
+            return property ?? throw new ArgumentException($"Could not find public instance property {propertyName} on type {type.FullName}");
         }
     }
 }

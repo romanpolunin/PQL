@@ -23,7 +23,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// Desired return type of the resulting compiled lambda expression.
         /// </summary>
-        public readonly Type ReturnType;
+        public readonly Type? DesiredReturnType;
 
         /// <summary>
         /// Return type as derived from the source Expression.
@@ -40,10 +40,13 @@ namespace Pql.ExpressionEngine.Interfaces
         /// </summary>
         /// <param name="parentRuntime">Reference to the runtime which created this state object</param>
         /// <param name="contextType">Optional, type of the default @Context argument</param>
-        /// <param name="returnType">Optional return type, supply null to compile to Action</param>
+        /// <param name="desiredReturnType">Optional return type, supply <c>null</c> to compile to Action</param>
         /// <param name="args">Ordered list of types of arguments</param>
-        public CompilerState(IExpressionEvaluatorRuntime parentRuntime, Type contextType, Type returnType, params Tuple<string, Type>[] args)
+        public CompilerState(IExpressionEvaluatorRuntime parentRuntime, Type? contextType, Type? desiredReturnType, params Tuple<string, Type>[] args)
         {
+            ParentRuntime = parentRuntime ?? throw new ArgumentNullException(nameof(parentRuntime));
+            DesiredReturnType = desiredReturnType;
+
             var arguments = new List<ParameterExpression>();
 
             if (contextType != null)
@@ -72,8 +75,6 @@ namespace Pql.ExpressionEngine.Interfaces
                 }
             }
 
-            ParentRuntime = parentRuntime ?? throw new ArgumentNullException(nameof(parentRuntime));
-            ReturnType = returnType;
             Arguments = arguments;
         }
 
@@ -87,7 +88,7 @@ namespace Pql.ExpressionEngine.Interfaces
         public ParameterExpression RequireArgumentByName(string name)
         {
             var result = TryGetArgumentByName(name);
-            return result == null ? throw new ArgumentException("Argument " + name + "is not defined") : result;
+            return result ?? throw new ArgumentException("Argument " + name + "is not defined");
         }
 
         /// <summary>
@@ -130,7 +131,7 @@ namespace Pql.ExpressionEngine.Interfaces
         public ParameterExpression RequireContext()
         {
             var result = Context;
-            return result == null ? throw new CompilationException("Argument @Context is not registered") : result;
+            return result ?? throw new CompilationException("Argument @Context is not registered");
         }
     }
 }

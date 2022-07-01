@@ -39,7 +39,7 @@ namespace Pql.ExpressionEngine.Compiler
                 throw new ArgumentException("Atom handlers must have non-null ExpressionGenerator member", nameof(atom));
             }
 
-            m_atomHandlers.Add(atom);
+            _atomHandlers.Add(atom);
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace Pql.ExpressionEngine.Compiler
                 throw new ArgumentException("Atom type is invalid: " + atom.AtomType);
             }
 
-            if (!m_atoms.TryAdd(atom.Name, atom))
+            if (!_atoms.TryAdd(atom.Name, atom))
             {
                 throw new ArgumentException("Atom with the same name is already registered: " + atom.Name);
             }
@@ -80,7 +80,7 @@ namespace Pql.ExpressionEngine.Compiler
                 throw new ArgumentNullException(nameof(name));
             }
 
-            return m_atoms.ContainsKey(name);
+            return _atoms.ContainsKey(name);
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace Pql.ExpressionEngine.Compiler
         /// <param name="type">Desired return type, or null to produce an action</param>
         /// <exception cref="ArgumentNullException"><paramref name="expression"/> is null</exception>
         /// <exception cref="CompilationException">Could produce a safe adjustment</exception>
-        public Expression AdjustReturnType(Expression expression, Type type)
+        public Expression AdjustReturnType(Expression expression, Type? type)
         {
             if (expression == null)
             {
@@ -183,6 +183,11 @@ namespace Pql.ExpressionEngine.Compiler
         /// <exception cref="CompilationException">Mismatch in argument or context types, other consistency errors</exception>
         public object Compile(Expression expression, CompilerState state)
         {
+            if (state == null)
+            {
+                throw new ArgumentNullException(nameof(state));
+            }
+
             return CompileImpl(expression, state);
         }
 
@@ -198,7 +203,7 @@ namespace Pql.ExpressionEngine.Compiler
         public ParseTree Parse(string text, CancellationToken cancellation)
         {
             ParseTree result;
-            using (var poolAccessor = m_expressionParsers.Take(cancellation))
+            using (var poolAccessor = _expressionParsers.Take(cancellation))
             {
                 try
                 {
@@ -230,6 +235,16 @@ namespace Pql.ExpressionEngine.Compiler
         /// <exception cref="CompilationException">Compilation errors, check exception details</exception>
         public Expression Analyze(ParseTreeNode root, CompilerState state)
         {
+            if (root is null)
+            {
+                throw new ArgumentNullException(nameof(root));
+            }
+
+            if (state == null)
+            {
+                throw new ArgumentNullException(nameof(state));
+            }
+
             switch (root.Term.Name)
             {
                 case "exprList":

@@ -8,22 +8,24 @@ using Pql.ExpressionEngine.Grammar;
 using Pql.ExpressionEngine.Interfaces;
 using Pql.ExpressionEngine.Utilities;
 
+
+#pragma warning disable IDE0049
 namespace Pql.ExpressionEngine.Compiler
 {
     public partial class ExpressionEvaluatorRuntime
     {
-        private static readonly LanguageData LangData;
-        private static readonly NonTerminal ExpressionNonTerminal;
+        private static readonly LanguageData s_langData;
+        private static readonly NonTerminal s_expressionNonTerminal;
 
-        private readonly ObjectPool<Parser> m_expressionParsers;
-        private readonly ConcurrentDictionary<string, AtomMetadata> m_atoms;
-        private readonly ConcurrentBag<AtomMetadata> m_atomHandlers;
+        private readonly ObjectPool<Parser> _expressionParsers;
+        private readonly ConcurrentDictionary<string, AtomMetadata> _atoms;
+        private readonly ConcurrentBag<AtomMetadata> _atomHandlers;
 
         static ExpressionEvaluatorRuntime()
         {
             Irony.Parsing.Grammar grammar = new ExpressionGrammar();
-            LangData = new LanguageData(grammar);
-            ExpressionNonTerminal = LangData.GrammarData.NonTerminals.Single(x => x.Name == "expression");
+            s_langData = new LanguageData(grammar);
+            s_expressionNonTerminal = s_langData.GrammarData.NonTerminals.Single(x => x.Name == "expression");
         }
 
         /// <summary>
@@ -32,10 +34,10 @@ namespace Pql.ExpressionEngine.Compiler
         public ExpressionEvaluatorRuntime()
         {
             var maxDegreeOfParallelism = Environment.ProcessorCount * 4;
-            m_atoms = new ConcurrentDictionary<string, AtomMetadata>(StringComparer.OrdinalIgnoreCase);
-            m_atomHandlers = new ConcurrentBag<AtomMetadata>();
+            _atoms = new ConcurrentDictionary<string, AtomMetadata>(StringComparer.OrdinalIgnoreCase);
+            _atomHandlers = new ConcurrentBag<AtomMetadata>();
 
-            m_expressionParsers = new ObjectPool<Parser>(maxDegreeOfParallelism, () => new Parser(LangData, ExpressionNonTerminal));
+            _expressionParsers = new ObjectPool<Parser>(maxDegreeOfParallelism, () => new Parser(s_langData, s_expressionNonTerminal));
 
             RegisterAtom(new AtomMetadata(AtomType.Identifier, "Null", PredefinedAtom_Null));
             RegisterAtom(new AtomMetadata(AtomType.Function, "IsNull", PredefinedAtom_IsNull));
@@ -158,16 +160,11 @@ namespace Pql.ExpressionEngine.Compiler
             return BuildIsNullPredicate(arg1Node, state, true);
         }
 
-        private static Expression PredefinedAtom_NewGUID(ParseTreeNode root, CompilerState state)
-        {
-            return Expression.Call(typeof(Guid), "NewGuid", null);
-        }
+        private static Expression PredefinedAtom_NewGUID(ParseTreeNode root, CompilerState state) => Expression.Call(typeof(Guid), "NewGuid", null);
 
-        private static Expression PredefinedAtom_Null(ParseTreeNode root, CompilerState state)
-        {
+        private static Expression PredefinedAtom_Null(ParseTreeNode root, CompilerState state) =>
             // clients are responsible for translating this expression into appropriate type
-            return ExpressionTreeExtensions.MakeNewNullable(typeof(UnboxableNullable<ExpressionTreeExtensions.VoidTypeMarker>));
-        }
+            ExpressionTreeExtensions.MakeNewNullable(typeof(UnboxableNullable<ExpressionTreeExtensions.VoidTypeMarker>));
 
         private static Expression PredefinedAtom_False(ParseTreeNode root, CompilerState state)
         {
@@ -213,6 +210,7 @@ namespace Pql.ExpressionEngine.Compiler
                 {
                     thisValue = ExpressionTreeExtensions.MakeNewNullable(thisValue);
                 }
+
                 result = Expression.Condition(isDefault, result, thisValue);
             }
 
@@ -223,9 +221,9 @@ namespace Pql.ExpressionEngine.Compiler
         {
             if (value.IsString())
             {
-                if (value is ConstantExpression)
+                if (value is ConstantExpression constValue)
                 {
-                    return Expression.Constant(string.IsNullOrEmpty((string?)((ConstantExpression)value).Value), typeof(Boolean));
+                    return Expression.Constant(string.IsNullOrEmpty((string?)constValue.Value), typeof(Boolean));
                 }
 
                 return Expression.Call(ReflectionHelper.StringIsNullOrEmpty, value);
@@ -244,9 +242,9 @@ namespace Pql.ExpressionEngine.Compiler
 
             if (value.IsString())
             {
-                if (value is ConstantExpression)
+                if (value is ConstantExpression constValue)
                 {
-                    return Expression.Constant(string.IsNullOrEmpty((string?)((ConstantExpression)value).Value), typeof(Boolean));
+                    return Expression.Constant(string.IsNullOrEmpty((string?)constValue.Value), typeof(Boolean));
                 }
 
                 return Expression.Call(ReflectionHelper.StringIsNullOrEmpty, value);
@@ -268,14 +266,14 @@ namespace Pql.ExpressionEngine.Compiler
             if (ReferenceEquals(value.Type, typeof(Double)))
             {
                 return constExpr != null
-                           ? (Expression)Expression.Constant(Double.IsNaN((Double)constExpr.Value!))
+                           ? Expression.Constant(Double.IsNaN((Double)constExpr.Value!))
                            : Expression.Call(ReflectionHelper.DoubleIsNaN, value);
             }
 
             if (ReferenceEquals(value.Type, typeof(Single)))
             {
                 return constExpr != null
-                           ? (Expression)Expression.Constant(Single.IsNaN((Single)constExpr.Value!))
+                           ? Expression.Constant(Single.IsNaN((Single)constExpr.Value!))
                            : Expression.Call(ReflectionHelper.SingleIsNaN, value);
             }
 
@@ -295,14 +293,14 @@ namespace Pql.ExpressionEngine.Compiler
             if (ReferenceEquals(value.Type, typeof(Double)))
             {
                 return constExpr != null
-                           ? (Expression)Expression.Constant(Double.IsInfinity((Double)constExpr.Value!))
+                           ? Expression.Constant(Double.IsInfinity((Double)constExpr.Value!))
                            : Expression.Call(ReflectionHelper.DoubleIsInfinity, value);
             }
 
             if (ReferenceEquals(value.Type, typeof(Single)))
             {
                 return constExpr != null
-                           ? (Expression)Expression.Constant(Single.IsInfinity((Single)constExpr.Value!))
+                           ? Expression.Constant(Single.IsInfinity((Single)constExpr.Value!))
                            : Expression.Call(ReflectionHelper.SingleIsInfinity, value);
             }
 
@@ -338,20 +336,11 @@ namespace Pql.ExpressionEngine.Compiler
             return Expression.Constant(Double.PositiveInfinity);
         }
 
-        private static Expression PredefinedAtom_EndsWith(ParseTreeNode root, CompilerState state)
-        {
-            return PredefinedAtom_StringLike(root, "EndsWith", state);
-        }
+        private static Expression PredefinedAtom_EndsWith(ParseTreeNode root, CompilerState state) => PredefinedAtom_StringLike(root, "EndsWith", state);
 
-        private static Expression PredefinedAtom_StartsWith(ParseTreeNode root, CompilerState state)
-        {
-            return PredefinedAtom_StringLike(root, "StartsWith", state);
-        }
+        private static Expression PredefinedAtom_StartsWith(ParseTreeNode root, CompilerState state) => PredefinedAtom_StringLike(root, "StartsWith", state);
 
-        private static Expression PredefinedAtom_Contains(ParseTreeNode root, CompilerState state)
-        {
-            return PredefinedAtom_StringLike(root, "IndexOf", state);
-        }
+        private static Expression PredefinedAtom_Contains(ParseTreeNode root, CompilerState state) => PredefinedAtom_StringLike(root, "IndexOf", state);
 
         private static Expression PredefinedAtom_StringLike(ParseTreeNode root, string methodName, CompilerState state)
         {
@@ -410,7 +399,7 @@ namespace Pql.ExpressionEngine.Compiler
                 }
 
                 // maybe we can parse string to a number?
-                if ((targetType.IsNumeric() || targetType.IsDateTime() || targetType.IsTimeSpan() || targetType.IsGuid()))
+                if (targetType.IsNumeric() || targetType.IsDateTime() || targetType.IsTimeSpan() || targetType.IsGuid())
                 {
                     var parseMethod = ReflectionHelper.GetOrAddMethod1(targetType, "Parse", value.Type);
                     return Expression.Condition(
@@ -445,7 +434,7 @@ namespace Pql.ExpressionEngine.Compiler
             }
             catch
             {
-                throw new CompilationException(string.Format("There is no conversion from type {0} to type {1}", value.Type.FullName, targetType.FullName), arg2Node);
+                throw new CompilationException($"There is no conversion from type {value.Type.FullName} to type {targetType.FullName}", arg2Node);
             }
         }
 
@@ -489,8 +478,9 @@ namespace Pql.ExpressionEngine.Compiler
                 var ctr = typeof(DateTime).GetConstructor(typeArray);
                 if (ctr == null)
                 {
-                    throw new Exception(string.Format("Could not locate datetime constructor with {0} int arguments", typeArray.Length));
+                    throw new Exception($"Could not locate datetime constructor with {typeArray.Length} int arguments");
                 }
+
                 return ConstantHelper.TryEvalConst(root, ctr, args);
             }
 
@@ -531,6 +521,7 @@ namespace Pql.ExpressionEngine.Compiler
                 {
                     return typeof(SizableArrayOfByte);
                 }
+
                 targetType = Type.GetType("System." + targetTypeName, false, true);
             }
             catch (Exception e)

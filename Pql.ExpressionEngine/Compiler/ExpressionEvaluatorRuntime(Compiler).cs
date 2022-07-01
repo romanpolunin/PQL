@@ -7,6 +7,7 @@ using Irony.Parsing;
 
 using Pql.ExpressionEngine.Interfaces;
 
+#pragma warning disable IDE0049
 namespace Pql.ExpressionEngine.Compiler
 {
     public partial class ExpressionEvaluatorRuntime
@@ -73,7 +74,7 @@ namespace Pql.ExpressionEngine.Compiler
             return Analyze(root, state);
         }
 
-        private Expression BuildStringLiteralExpression(ParseTreeNode root, CompilerState state)
+        private static Expression BuildStringLiteralExpression(ParseTreeNode root, CompilerState state)
         {
             root.RequireChildren(0);
             var value = root.Token.ValueString;
@@ -82,7 +83,7 @@ namespace Pql.ExpressionEngine.Compiler
             return expr;
         }
 
-        private string PreprocessStringLiteral(string value, ParseTreeNode root)
+        private static string PreprocessStringLiteral(string value, ParseTreeNode? root)
         {
             try
             {
@@ -96,17 +97,14 @@ namespace Pql.ExpressionEngine.Compiler
             }
         }
 
-        private Expression BuildNumericConstantExpression(ParseTreeNode root, CompilerState state)
+        private static Expression BuildNumericConstantExpression(ParseTreeNode root, CompilerState state)
         {
             root.RequireChildren(0);
 
             var objValue = root.Token.Value;
-            if (objValue != null && objValue.GetType().IsNumeric())
-            {
-                return Expression.Constant(objValue);
-            }
-
-            throw new CompilationException("Invalid numeric constant: " + root.Token.Text, root);
+            return objValue != null && objValue.GetType().IsNumeric()
+                ? Expression.Constant(objValue)
+                : throw new CompilationException("Invalid numeric constant: " + root.Token.Text, root);
         }
 
         private Expression BuildIdentifierExpression(ParseTreeNode root, CompilerState state)
@@ -122,8 +120,8 @@ namespace Pql.ExpressionEngine.Compiler
             {
                 var name = root.ChildNodes[i].Token.Text; // no need to lowercase this text
                 var next = TryGetFieldOrPropertyInfoFromContext(name, identifier);
-                identifier = next ?? throw new CompilationException(string.Format("Could not find field or property {0} on type {1}",
-                        name, identifier.Type));
+                identifier = next ?? throw new CompilationException(
+                    $"Could not find field or property {name} on type {identifier.Type}", root);
             }
 
             return identifier;
@@ -150,11 +148,12 @@ namespace Pql.ExpressionEngine.Compiler
             }
 
             // and only then look through available IDENTIFIER atoms
-            if (m_atoms.TryGetValue(name, out var atom) && atom.AtomType == AtomType.Identifier)
+            if (_atoms.TryGetValue(name, out var atom) && atom.AtomType == AtomType.Identifier)
             {
                 if (atom.ExpressionGenerator != null)
                 {
-                    return atom.ExpressionGenerator(root, state);
+                    return atom.ExpressionGenerator(root, state)
+                        ?? throw new CompilationException($"Couldn't generate an expression for atom {atom.Name}", root);
                 }
 
                 if (atom.MethodInfo == null)
@@ -185,7 +184,7 @@ namespace Pql.ExpressionEngine.Compiler
             }
 
             // still nothing found? ask IDENTIFIER atom handlers
-            foreach (var handler in m_atomHandlers)
+            foreach (var handler in _atomHandlers)
             {
                 if (handler.AtomType != AtomType.Identifier)
                 {
@@ -209,14 +208,14 @@ namespace Pql.ExpressionEngine.Compiler
             throw new CompilationException("Unknown atom: " + name, root);
         }
 
-        private Expression BuildFunctorInvokeExpression(AtomMetadata atom, Expression[] args)
+        private static Expression BuildFunctorInvokeExpression(AtomMetadata atom, Expression[] args)
         {
             return atom.MethodTarget == null
                     ? Expression.Call(atom.MethodInfo, args)
                     : Expression.Call(Expression.Constant(atom.MethodTarget), atom.MethodInfo, args);
         }
 
-        private Expression BuildFunctorInvokeExpression(AtomMetadata atom, Expression adjustedContext)
+        private static Expression BuildFunctorInvokeExpression(AtomMetadata atom, Expression adjustedContext)
         {
             if (adjustedContext == null)
             {
@@ -230,7 +229,7 @@ namespace Pql.ExpressionEngine.Compiler
                     : Expression.Call(Expression.Constant(atom.MethodTarget), atom.MethodInfo, adjustedContext);
         }
 
-        private Expression TryGetFieldOrPropertyInfoFromContext(string name, Expression context)
+        private static Expression? TryGetFieldOrPropertyInfoFromContext(string name, Expression? context)
         {
             if (context == null)
             {
@@ -262,7 +261,7 @@ namespace Pql.ExpressionEngine.Compiler
             root.RequireChild("funArgs", 1);
 
             var name = idNode.ChildNodes[0].Token.ValueString;
-            if (!m_atoms.TryGetValue(name, out var atom) || atom.AtomType != AtomType.Function)
+            if (!_atoms.TryGetValue(name, out var atom) || atom.AtomType != AtomType.Function)
             {
                 throw new CompilationException("Unknown function: " + name, root);
             }
@@ -274,7 +273,8 @@ namespace Pql.ExpressionEngine.Compiler
 
             if (atom.ExpressionGenerator != null)
             {
-                return atom.ExpressionGenerator(root, state);
+                return atom.ExpressionGenerator(root, state)
+                    ?? throw new CompilationException($"Couldn't generate expression for {atom.Name}", root);
             }
 
             // internal error, somebody screwed up with configuration of runtime
@@ -317,7 +317,7 @@ namespace Pql.ExpressionEngine.Compiler
             var caseVariableNode = root.RequireChild("caseVariable", 1);
             caseVariableNode.RequireChildren(0, 1);
 
-            ParseTreeNode caseDefaultValueNode = null;
+            ParseTreeNode? caseDefaultValueNode = null;
             if (root.ChildNodes.Count > 4)
             {
                 var caseDefaultNode = root.RequireChild("caseDefault", 3);
@@ -358,7 +358,7 @@ namespace Pql.ExpressionEngine.Compiler
             }
 
             var cases = new List<Tuple<Expression[], Expression, ParseTreeNode>>(whenThenListNode.ChildNodes.Count);
-            Expression firstNonVoidThen = null;
+            Expression? firstNonVoidThen = null;
             var mustReturnNullable = false;
 
             foreach (var caseWhenThenNode in whenThenListNode.ChildNodes)
@@ -477,7 +477,7 @@ namespace Pql.ExpressionEngine.Compiler
                 cases.Select(x => Expression.SwitchCase(x.Item2, x.Item1)));
         }
 
-        private Expression BuildCaseStatementExpression(CompilerState state, ParseTreeNode whenThenListNode, Expression caseDefault)
+        private Expression BuildCaseStatementExpression(CompilerState state, ParseTreeNode whenThenListNode, Expression? caseDefault)
         {
             // now start building on top of the tail, right to left, 
             // also making sure that types are compatible
@@ -522,9 +522,9 @@ namespace Pql.ExpressionEngine.Compiler
                     }
                 }
 
-                if (when is ConstantExpression)
+                if (when is ConstantExpression constWhen)
                 {
-                    if ((bool)((ConstantExpression)when).Value)
+                    if ((bool)constWhen.Value)
                     {
                         tail = then;
                     }
@@ -546,7 +546,7 @@ namespace Pql.ExpressionEngine.Compiler
             if (compareIsNull)
             {
                 return value.Type.IsNullableType()
-                           ? ConstantHelper.TryEvalConst(root, ConstantHelper.TryEvalConst(root, value.Type.GetField("HasValue"), value), ExpressionType.Not, typeof(bool))
+                           ? ConstantHelper.TryEvalConst(root, ConstantHelper.TryEvalConst(root, value.Type.RequireField("HasValue"), value), ExpressionType.Not, typeof(bool))
                            : value.Type.IsValueType
                                  ? Expression.Constant(false)
                                  : ConstantHelper.TryEvalConst(root, value, Expression.Constant(null), ExpressionType.Equal);
@@ -554,7 +554,7 @@ namespace Pql.ExpressionEngine.Compiler
 
             // IS NOT NULL
             return value.Type.IsNullableType()
-                       ? ConstantHelper.TryEvalConst(root, value.Type.GetField("HasValue"), value)
+                       ? ConstantHelper.TryEvalConst(root, value.Type.RequireField("HasValue"), value)
                        : value.Type.IsValueType
                              ? Expression.Constant(true)
                              : ConstantHelper.TryEvalConst(root, value, Expression.Constant(null), ExpressionType.NotEqual);
@@ -622,6 +622,7 @@ namespace Pql.ExpressionEngine.Compiler
                             target.RequireBoolean(targetNode);
                             return ConstantHelper.TryEvalConst(root, target, ExpressionType.Not, target.Type);
                         }
+
                         throw new CompilationException(
                             string.Format(
                                 "Unary operator {0} not supported for type {1}", op, target.Type.FullName), root);
@@ -693,8 +694,6 @@ namespace Pql.ExpressionEngine.Compiler
                 throw new CompilationException("This operation is not defined when both arguments are void", root);
             }
 
-            Expression expr;
-
             leftExpr = leftExpr.RemoveNullability();
             rightExpr = rightExpr.RemoveNullability();
 
@@ -702,71 +701,41 @@ namespace Pql.ExpressionEngine.Compiler
                 || (leftExpr.IsTimeSpan() && rightExpr.IsTimeSpan()))
             {
                 #region DateTime and DateTime, or TimeSpan and TimeSpan
-                switch (op)
+                return op switch
                 {
-                    case "+":
-                        if (leftExpr.IsDateTime() && rightExpr.IsDateTime())
-                        {
-                            throw new CompilationException("Datetime values cannot be added to one another", root);
-                        }
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Add);
-                        break;
-                    case "-":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Subtract);
-                        break;
-                    case "=":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Equal);
-                        break;
-                    case "!=":
-                    case "<>":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.NotEqual);
-                        break;
-                    case ">":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.GreaterThan);
-                        break;
-                    case "<":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.LessThan);
-                        break;
-                    case "<=":
-                    case "!>":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.LessThanOrEqual);
-                        break;
-                    case ">=":
-                    case "!<":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.GreaterThanOrEqual);
-                        break;
-                    default:
-                        throw new CompilationException("Binary operator not supported for datetime values: " + op, root.ChildNodes[1]);
-                }
+                    "+" => leftExpr.IsDateTime() && rightExpr.IsDateTime()
+                            ? throw new CompilationException("Datetime values cannot be added to one another", root)
+                            : ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Add),
+                    "-" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Subtract),
+                    "=" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Equal),
+                    "!=" or "<>" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.NotEqual),
+                    ">" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.GreaterThan),
+                    "<" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.LessThan),
+                    "<=" or "!>" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.LessThanOrEqual),
+                    ">=" or "!<" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.GreaterThanOrEqual),
+                    _ => throw new CompilationException("Binary operator not supported for datetime values: " + op, root.ChildNodes[1])
+                };
                 #endregion
             }
             else if (leftExpr.IsDateTime() && rightExpr.IsTimeSpan())
             {
                 #region DateTime and TimeSpan or TimeSpan and DateTime
-                switch (op)
+                return op switch
                 {
-                    case "+":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Add);
-                        break;
-                    case "-":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Subtract);
-                        break;
-                    default:
-                        throw new CompilationException("Binary operator not supported for datetime and timespan: " + op, root.ChildNodes[1]);
-                }
+                    "+" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Add),
+                    "-" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Subtract),
+                    _ => throw new CompilationException("Binary operator not supported for datetime and timespan: " + op, root.ChildNodes[1])
+                };
                 #endregion
             }
             else if (leftExpr.IsTimeSpan() && rightExpr.IsDateTime())
             {
                 #region TimeSpan and DateTime
-                switch (op)
+                return op switch
                 {
-                    case "+":
-                        expr = ConstantHelper.TryEvalConst(root, rightExpr, leftExpr, ExpressionType.Add);
-                        break;
-                    default:
-                        throw new CompilationException("Binary operator not supported for timespan and datetime: " + op, root.ChildNodes[1]);
-                }
+                    "+" => ConstantHelper.TryEvalConst(root, rightExpr, leftExpr, ExpressionType.Add),
+                    _ => throw new CompilationException("Binary operator not supported for timespan and datetime: " + op, root.ChildNodes[1])
+                };
                 #endregion
             }
             else if (leftExpr.IsString() && rightExpr.IsString())
@@ -774,43 +743,25 @@ namespace Pql.ExpressionEngine.Compiler
                 #region String and String
                 switch (op)
                 {
-                    case "+":
-                        var concat = ReflectionHelper.StringConcat;
-                        expr = ConstantHelper.TryEvalConst(root, concat, leftExpr, rightExpr);
-                        break;
-
-                    case "=":
-                    case "!=":
-                    case "<>":
-                        expr = PrepareStringEquality(root, leftExpr, rightExpr);
+                    case "=" or "!=" or "<>":
+                        var expr = PrepareStringEquality(root, leftExpr, rightExpr);
                         if (op[0] != '=')
                         {
                             expr = ConstantHelper.TryEvalConst(root, expr, ExpressionType.Not, expr.Type);
                         }
-                        break;
 
-                    case ">":
-                        expr = ConstantHelper.TryEvalConst(root, PrepareStringComparison(root, leftExpr, rightExpr), Expression.Constant(0), ExpressionType.GreaterThan);
-                        break;
+                        return expr;
 
-                    case "<":
-                        expr = ConstantHelper.TryEvalConst(root, PrepareStringComparison(root, leftExpr, rightExpr), Expression.Constant(0), ExpressionType.LessThan);
-                        break;
-
-                    case "<=":
-                    case "!>":
-                        expr = ConstantHelper.TryEvalConst(root, PrepareStringComparison(root, leftExpr, rightExpr), Expression.Constant(0), ExpressionType.LessThanOrEqual);
-                        break;
-
-                    case ">=":
-                    case "!<":
-                        expr = ConstantHelper.TryEvalConst(root, PrepareStringComparison(root, leftExpr, rightExpr), Expression.Constant(0), ExpressionType.GreaterThanOrEqual);
-                        break;
-
-                    case "like":
-                        throw new CompilationException("Instead of LIKE, use predefined functions StartsWith, EndsWith and Contains", root.ChildNodes[1]);
-                    default:
-                        throw new CompilationException("Binary operator not supported for strings: " + op, root.ChildNodes[1]);
+                    default: return op switch
+                        {
+                            "+" => ConstantHelper.TryEvalConst(root, ReflectionHelper.StringConcat, leftExpr, rightExpr),
+                            ">" => ConstantHelper.TryEvalConst(root, PrepareStringComparison(root, leftExpr, rightExpr), Expression.Constant(0), ExpressionType.GreaterThan),
+                            "<" => ConstantHelper.TryEvalConst(root, PrepareStringComparison(root, leftExpr, rightExpr), Expression.Constant(0), ExpressionType.LessThan),
+                            "<=" or "!>" => ConstantHelper.TryEvalConst(root, PrepareStringComparison(root, leftExpr, rightExpr), Expression.Constant(0), ExpressionType.LessThanOrEqual),
+                            ">=" or "!<" => ConstantHelper.TryEvalConst(root, PrepareStringComparison(root, leftExpr, rightExpr), Expression.Constant(0), ExpressionType.GreaterThanOrEqual),
+                            "like" => throw new CompilationException("Instead of LIKE, use predefined functions StartsWith, EndsWith and Contains", root.ChildNodes[1]),
+                            _ => throw new CompilationException("Binary operator not supported for strings: " + op, root.ChildNodes[1])
+                        };
                 }
                 #endregion
             }
@@ -819,97 +770,38 @@ namespace Pql.ExpressionEngine.Compiler
                 #region Numeric and Numeric
                 ExpressionTreeExtensions.AdjustArgumentsForBinaryOperation(ref leftExpr, ref rightExpr, root);
 
-                switch (op)
+                return op switch
                 {
-                    case "+":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Add);
-                        break;
-
-                    case "-":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Subtract);
-                        break;
-
-                    case "*":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Multiply);
-                        break;
-
-                    case "/":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Divide);
-                        break;
-
-                    case "%":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Modulo);
-                        break;
-
-                    case "&":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.And);
-                        break;
-
-                    case "|":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Or);
-                        break;
-
-                    case "^":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.ExclusiveOr);
-                        break;
-
-                    case "<":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.LessThan);
-                        break;
-
-                    case "<=":
-                    case "!>":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.LessThanOrEqual);
-                        break;
-
-                    case ">":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.GreaterThan);
-                        break;
-
-                    case ">=":
-                    case "!<":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.GreaterThanOrEqual);
-                        break;
-
-                    case "=":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Equal);
-                        break;
-
-                    case "!=":
-                    case "<>":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.NotEqual);
-                        break;
-
-                    default:
-                        throw new CompilationException("Binary operator not supported yet for numerics: " + op, root.ChildNodes[1]);
-                }
+                    "+" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Add),
+                    "-" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Subtract),
+                    "*" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Multiply),
+                    "/" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Divide),
+                    "%" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Modulo),
+                    "&" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.And),
+                    "|" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Or),
+                    "^" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.ExclusiveOr),
+                    "<" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.LessThan),
+                    "<=" or "!>" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.LessThanOrEqual),
+                    ">" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.GreaterThan),
+                    ">=" or "!<" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.GreaterThanOrEqual),
+                    "=" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Equal),
+                    "!=" or "<>" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.NotEqual),
+                    _ => throw new CompilationException("Binary operator not supported yet for numerics: " + op, root.ChildNodes[1]),
+                };
                 #endregion
             }
             else if (leftExpr.IsBoolean() && rightExpr.IsBoolean())
             {
                 #region Boolean and Boolean
-                switch (op)
+                return op switch
                 {
-                    case "and":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.AndAlso);
-                        break;
-                    case "or":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.OrElse);
-                        break;
-                    case "xor":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.ExclusiveOr);
-                        break;
-                    case "=":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Equal);
-                        break;
-                    case "!=":
-                    case "<>":
-                        expr = ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.NotEqual);
-                        break;
-
-                    default:
-                        throw new CompilationException("Binary operator not supported yet for booleans: " + op, root.ChildNodes[1]);
-                }
+                    "and" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.AndAlso),
+                    "or" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.OrElse),
+                    "xor" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.ExclusiveOr),
+                    "=" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.Equal),
+                    "!=" or "<>" => ConstantHelper.TryEvalConst(root, leftExpr, rightExpr, ExpressionType.NotEqual),
+                    _ => throw new CompilationException("Binary operator not supported yet for booleans: " + op, root.ChildNodes[1])
+                };
                 #endregion
             }
             else
@@ -917,8 +809,6 @@ namespace Pql.ExpressionEngine.Compiler
                 throw new CompilationException(string.Format("Binary operator {0} is not yet supported for types {1} and {2}",
                     op, leftExpr.Type.FullName, rightExpr.Type.FullName), root.ChildNodes[1]);
             }
-
-            return expr;
         }
 
         private Expression BuildInclusionExpression(ParseTreeNode root, Expression leftExpr, string op, CompilerState state)
@@ -952,13 +842,17 @@ namespace Pql.ExpressionEngine.Compiler
             }
             catch (TargetInvocationException e)
             {
-                if (e.InnerException == null) throw;
+                if (e.InnerException == null)
+                {
+                    throw;
+                }
+
                 throw e.InnerException;
             }
 
             // how many items do we have there?
             var countProperty = matchingSet.GetType().GetProperty("Count", BindingFlags.Instance | BindingFlags.Public);
-            var count = (int)(countProperty.GetValue(matchingSet));
+            var count = (int)countProperty.GetValue(matchingSet);
 
             Expression contains;
             if (leftExpr is ConstantExpression leftArgConst)
@@ -973,7 +867,10 @@ namespace Pql.ExpressionEngine.Compiler
                 catch (TargetInvocationException e)
                 {
                     if (e.InnerException == null)
+                    {
                         throw;
+                    }
+
                     throw e.InnerException;
                 }
             }
@@ -994,7 +891,10 @@ namespace Pql.ExpressionEngine.Compiler
                     catch (TargetInvocationException e)
                     {
                         if (e.InnerException == null)
+                        {
                             throw;
+                        }
+
                         throw e.InnerException;
                     }
 
@@ -1036,7 +936,7 @@ namespace Pql.ExpressionEngine.Compiler
             return ConstantHelper.TryEvalConst(root, equals, Expression.Constant(StringComparer.OrdinalIgnoreCase), leftExpr, rightExpr);
         }
 
-        private string GetBinaryOperator(ParseTreeNode opNode)
+        private static string GetBinaryOperator(ParseTreeNode opNode)
         {
             string text;
 
@@ -1054,11 +954,6 @@ namespace Pql.ExpressionEngine.Compiler
 
         private object CompileImpl(Expression expression, CompilerState state)
         {
-            if (state == null)
-            {
-                throw new ArgumentNullException(nameof(state));
-            }
-
             state.RawReturnType = expression.Type;
 
             while (expression.CanReduce)
@@ -1079,8 +974,8 @@ namespace Pql.ExpressionEngine.Compiler
             }
             else
             {
-                var returnType = state.ReturnType ?? state.RawReturnType;
-                paramTypes[paramTypes.Length - 1] = returnType;
+                var returnType = state.DesiredReturnType ?? state.RawReturnType;
+                paramTypes[^1] = returnType;
 
                 expression = ExpressionTreeExtensions.AdjustReturnType(null, expression, returnType);
                 lambda = Expression.Lambda(expression, state.Arguments);

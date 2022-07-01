@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
 
+#pragma warning disable IDE0049
 namespace Pql.ExpressionEngine.Interfaces
 {
     /// <summary>
@@ -93,7 +94,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <param name="methodName">Public static or instance method to look for</param>
         public static MethodInfo GetOrAddMethodAny(Type type, string methodName)
         {
-            return Methods.GetOrAdd(
+            return s_methods.GetOrAdd(
                 new Tuple<Type, string>(type, methodName),
                 tuple => Require(type, methodName, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public, null));
         }
@@ -105,7 +106,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <param name="methodName">Public instance method to look for</param>
         public static MethodInfo GetOrAddMethod0(Type type, string methodName)
         {
-            return Methods.GetOrAdd(
+            return s_methods.GetOrAdd(
                 new Tuple<Type, string>(type, methodName),
                 tuple => Require(type, methodName, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public, Type.EmptyTypes));
         }
@@ -118,7 +119,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <param name="type1">Type of the single argument</param>
         public static MethodInfo GetOrAddMethod1(Type type, string methodName, Type type1)
         {
-            return Methods.GetOrAdd(
+            return s_methods.GetOrAdd(
                 new Tuple<Type, string>(type, methodName + type1.GetHashCode()),
                 tuple => Require(type, methodName, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public, new[] { type1 }));
         }
@@ -137,6 +138,6 @@ namespace Pql.ExpressionEngine.Interfaces
             return methodInfo;
         }
 
-        private readonly static ConcurrentDictionary<Tuple<Type, string>, MethodInfo> Methods = new();
+        private readonly static ConcurrentDictionary<Tuple<Type, string>, MethodInfo> s_methods = new();
     }
 }

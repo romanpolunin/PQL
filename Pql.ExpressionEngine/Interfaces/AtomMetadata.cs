@@ -29,7 +29,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// Name of the element, will be used to parse expression.
         /// May contain dots, dotted notation will by default be transformed into field/property access expressions.
-        /// Do not use special character '@' in names, to avoid conflicts with arguments used by expression.
+        /// Do not use special character '@' in atom names, to avoid conflicts with arguments used by expression.
         /// </summary>
         public readonly string Name;
 
@@ -38,6 +38,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// This delegate will be invoked during compilation time, in order to create an Expression object given the parse tree context.
         /// </summary>
         /// <seealso cref="Functor"/>
+        /// <seealso cref="MethodInfo"/>
         public readonly ExpressionGeneratorCallback? ExpressionGenerator;
 
         /// <summary>
@@ -45,19 +46,24 @@ namespace Pql.ExpressionEngine.Interfaces
         /// May have zero or more arguments, may constitute a field accessor or function.
         /// Compilation engine will bind arguments, if any, to real arguments of this functor.
         /// </summary>
+        /// <seealso cref="MethodInfo"/>
         /// <seealso cref="ExpressionGenerator"/>
         public readonly object? Functor;
 
         /// <summary>
         /// Reflected method information on the functor. Automatically derived from the functor's reflected metadata.
+        /// Can be null if <see cref="Functor"/> or <see cref="ExpressionGenerator"/> are not null.
         /// </summary>
         /// <seealso cref="Functor"/>
+        /// <seealso cref="ExpressionGenerator"/>
         public readonly MethodInfo? MethodInfo;
 
         /// <summary>
         /// Closure instance on the functor. Automatically derived from the functor's reflected metadata.
+        /// Can be null if <see cref="MethodInfo"/> is null, or is for a static method.
         /// </summary>
         /// <seealso cref="Functor"/>
+        /// <seealso cref="ExpressionGenerator"/>
         public readonly object? MethodTarget;
 
         /// <summary>
@@ -95,19 +101,14 @@ namespace Pql.ExpressionEngine.Interfaces
                 throw new ArgumentNullException(nameof(name));
             }
 
-            ValidateExpressionGenerator(expressionGenerator);
-
-            AtomType = atomType;
-            Name = name;
-            ExpressionGenerator = expressionGenerator;
-        }
-
-        private static void ValidateExpressionGenerator(ExpressionGeneratorCallback expressionGenerator)
-        {
             if (expressionGenerator == null)
             {
                 throw new ArgumentNullException(nameof(expressionGenerator));
             }
+
+            AtomType = atomType;
+            Name = name;
+            ExpressionGenerator = expressionGenerator;
         }
 
         private MethodInfo? TryGetMethodInfo(object functor)

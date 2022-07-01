@@ -104,6 +104,7 @@ namespace Pql.ExpressionEngine.Interfaces
                 {
                     Buffer.BlockCopy(src.Data, 0, Data, 0, Length);
                 }
+
                 HashCode = src.HashCode;
             }
         }
@@ -363,6 +364,7 @@ namespace Pql.ExpressionEngine.Interfaces
                     {
                         return -1;
                     }
+
                     if (x.Data[i] > y.Data[i])
                     {
                         return 1;

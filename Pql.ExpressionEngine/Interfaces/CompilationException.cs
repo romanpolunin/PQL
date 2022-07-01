@@ -65,7 +65,7 @@ namespace Pql.ExpressionEngine.Interfaces
 
             var loc = location.Span.Location;
             var text = location.Term == null ? string.Empty : (" Term: " + location.Term.Name + ".");
-            return string.Format("Syntax error at {0}.{1}", FormatLocationString(loc, location.Span.Length), text);
+            return $"Syntax error at {FormatLocationString(loc, location.Span.Length)}.{text}";
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// </summary>
         public static string FormatLocationString(SourceLocation loc, int length)
         {
-            return string.Format("pos {0}, line {1}, col {2}, length {3}", loc.Position, loc.Line, loc.Column, length);
+            return $"pos {loc.Position}, line {loc.Line}, col {loc.Column}, length {length}";
         }
     }
 }

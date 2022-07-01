@@ -11,8 +11,8 @@ namespace Pql.ExpressionEngine.Interfaces
     /// </summary>
     public static class ConstantHelper
     {
-        private static readonly ConcurrentDictionary<Tuple<ExpressionType, Type>, Tuple<object, MethodInfo>> UnaryOperators = new();
-        private static readonly ConcurrentDictionary<Tuple<ExpressionType, Type, Type>, Tuple<object, MethodInfo>> BinaryOperators = new();
+        private static readonly ConcurrentDictionary<Tuple<ExpressionType, Type>, Tuple<object, MethodInfo>> s_unaryOperators = new();
+        private static readonly ConcurrentDictionary<Tuple<ExpressionType, Type, Type>, Tuple<object, MethodInfo>> s_binaryOperators = new();
 
         /// <summary>
         /// If all arguments are constant expressions, evaluates <paramref name="methodInfo"/> and returns result wrapped in <see cref="ConstantExpression"/>.
@@ -50,9 +50,14 @@ namespace Pql.ExpressionEngine.Interfaces
                 }
                 catch (TargetInvocationException e)
                 {
-                    if (e.InnerException == null) throw;
+                    if (e.InnerException == null)
+                    {
+                        throw;
+                    }
+
                     throw e.InnerException;
                 }
+
                 return Expression.Constant(value, methodInfo.ReturnType);
             }
             catch (InvalidOperationException e)
@@ -158,9 +163,14 @@ namespace Pql.ExpressionEngine.Interfaces
                 }
                 catch (TargetInvocationException e)
                 {
-                    if (e.InnerException == null) throw;
+                    if (e.InnerException == null)
+                    {
+                        throw;
+                    }
+
                     throw e.InnerException;
                 }
+
                 return Expression.Constant(value);
             }
             catch (InvalidOperationException e)
@@ -184,6 +194,7 @@ namespace Pql.ExpressionEngine.Interfaces
             {
                 throw new ArgumentNullException(nameof(right));
             }
+
             try
             {
                 return left is not ConstantExpression x || right is not ConstantExpression y
@@ -213,7 +224,7 @@ namespace Pql.ExpressionEngine.Interfaces
 
             try
             {
-                var method = BinaryOperators.GetOrAdd(
+                var method = s_binaryOperators.GetOrAdd(
                     new Tuple<ExpressionType, Type, Type>(op, left.Type,
                         (op is ExpressionType.Convert or ExpressionType.ConvertChecked) ? (Type)right.Value : right.Type), tuple =>
                        {
@@ -232,6 +243,7 @@ namespace Pql.ExpressionEngine.Interfaces
                                var expr = Expression.MakeBinary(tuple.Item1, arg1, arg2);
                                func = Expression.Lambda(Expression.GetFuncType(arg1.Type, arg2.Type, expr.Type), expr, arg1, arg2).Compile();
                            }
+
                            return new Tuple<object, MethodInfo>(func, ReflectionHelper.GetOrAddMethodAny(func.GetType(), "Invoke"));
                        });
 
@@ -243,9 +255,14 @@ namespace Pql.ExpressionEngine.Interfaces
                 }
                 catch (TargetInvocationException e)
                 {
-                    if (e.InnerException == null) throw;
+                    if (e.InnerException == null)
+                    {
+                        throw;
+                    }
+
                     throw e.InnerException;
                 }
+
                 return Expression.Constant(value, returnType ?? method.Item2.ReturnType);
             }
             catch (InvalidOperationException e)
@@ -293,7 +310,7 @@ namespace Pql.ExpressionEngine.Interfaces
             {
                 if (op is ExpressionType.Convert or ExpressionType.ConvertChecked)
                 {
-                    var method = BinaryOperators.GetOrAdd(
+                    var method = s_binaryOperators.GetOrAdd(
                         new Tuple<ExpressionType, Type, Type>(op, left.Type, returnType), tuple =>
                             {
                                 var arg1 = Expression.Parameter(tuple.Item2);
@@ -309,14 +326,19 @@ namespace Pql.ExpressionEngine.Interfaces
                     }
                     catch (TargetInvocationException e)
                     {
-                        if (e.InnerException == null) throw;
+                        if (e.InnerException == null)
+                        {
+                            throw;
+                        }
+
                         throw e.InnerException;
                     }
+
                     return Expression.Constant(value, returnType);
                 }
                 else
                 {
-                    var method = UnaryOperators.GetOrAdd(
+                    var method = s_unaryOperators.GetOrAdd(
                         new Tuple<ExpressionType, Type>(op, left.Type), tuple =>
                             {
                                 var arg1 = Expression.Parameter(tuple.Item2);
@@ -332,9 +354,14 @@ namespace Pql.ExpressionEngine.Interfaces
                     }
                     catch (TargetInvocationException e)
                     {
-                        if (e.InnerException == null) throw;
+                        if (e.InnerException == null)
+                        {
+                            throw;
+                        }
+
                         throw e.InnerException;
                     }
+
                     return Expression.Constant(value, returnType);
                 }
             }
