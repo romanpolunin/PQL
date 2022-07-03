@@ -10,9 +10,6 @@ namespace Pql.ExpressionEngine.UnitTest
         /// Most useful for int, bool etc.
         /// </summary>
         /// <example>0.Null(), or false.Null()</example>
-        public static UnboxableNullable<T> Null<T>(this T _) where T : struct
-        {
-            return new UnboxableNullable<T>();
-        }
+        public static UnboxableNullable<T> Null<T>(this T _) where T : struct => new();
     }
 }

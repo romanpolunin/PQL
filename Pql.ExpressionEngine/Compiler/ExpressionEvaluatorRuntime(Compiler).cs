@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -60,11 +61,6 @@ namespace Pql.ExpressionEngine.Compiler
 
         private Expression Analyze(ParseTree tree, CompilerState state)
         {
-            if (tree == null)
-            {
-                throw new ArgumentNullException(nameof(tree));
-            }
-
             if (tree.Status != ParseTreeStatus.Parsed)
             {
                 throw new ArgumentException("Cannot build expression on incomplete tree");
@@ -121,7 +117,7 @@ namespace Pql.ExpressionEngine.Compiler
                 var name = root.ChildNodes[i].Token.Text; // no need to lowercase this text
                 var next = TryGetFieldOrPropertyInfoFromContext(name, identifier);
                 identifier = next ?? throw new CompilationException(
-                    $"Could not find field or property {name} on type {identifier.Type}", root);
+                    $"Could not find field or property {name} on {identifier.Type.FullName}", root);
             }
 
             return identifier;
@@ -159,14 +155,14 @@ namespace Pql.ExpressionEngine.Compiler
                 if (atom.MethodInfo == null)
                 {
                     // internal error, somebody screwed up with configuration of runtime
-                    throw new Exception("ExpressionGenerator and MethodInfo are both null on atom: " + atom.Name);
+                    throw new Exception($"ExpressionGenerator and MethodInfo are both null on atom {atom.Name}");
                 }
 
                 // no arguments? great
                 var paramInfo = atom.MethodInfo.GetParameters();
                 if (paramInfo.Length == 0)
                 {
-                    return BuildFunctorInvokeExpression(atom, (Expression[])null);
+                    return BuildFunctorInvokeExpression(atom, (Expression[]?)null);
                 }
 
                 // any arguments? must have exactly one argument, context must be registered, and context type must be adjustable to this method's arg type
@@ -208,9 +204,11 @@ namespace Pql.ExpressionEngine.Compiler
             throw new CompilationException("Unknown atom: " + name, root);
         }
 
-        private static Expression BuildFunctorInvokeExpression(AtomMetadata atom, Expression[] args)
+        private static Expression BuildFunctorInvokeExpression(AtomMetadata atom, Expression[]? args)
         {
-            return atom.MethodTarget == null
+            return atom.MethodInfo is null
+                ? throw new Exception("MethodInfo is null on atom " + atom.Name)
+                : atom.MethodTarget == null
                     ? Expression.Call(atom.MethodInfo, args)
                     : Expression.Call(Expression.Constant(atom.MethodTarget), atom.MethodInfo, args);
         }
@@ -219,12 +217,16 @@ namespace Pql.ExpressionEngine.Compiler
         {
             if (adjustedContext == null)
             {
-                return atom.MethodTarget == null
+                return atom.MethodInfo is null
+                        ? throw new Exception("MethodInfo is null on atom " + atom.Name)
+                        : atom.MethodTarget == null
                         ? Expression.Call(atom.MethodInfo)
                         : Expression.Call(Expression.Constant(atom.MethodTarget), atom.MethodInfo);
             }
 
-            return atom.MethodTarget == null
+            return atom.MethodInfo is null
+                    ? throw new Exception("MethodInfo is null on atom " + atom.Name)
+                    : atom.MethodTarget == null
                     ? Expression.Call(atom.MethodInfo, adjustedContext)
                     : Expression.Call(Expression.Constant(atom.MethodTarget), atom.MethodInfo, adjustedContext);
         }
@@ -283,6 +285,11 @@ namespace Pql.ExpressionEngine.Compiler
 
         private Expression BuildFunCallExpressionFromMethodInfo(AtomMetadata atom, ParseTreeNode root, CompilerState state)
         {
+            if (atom.MethodInfo is null)
+            {
+                throw new Exception("MethodInfo is null on atom " + atom.Name);
+            }
+
             // number of arguments must exactly match number of child nodes in the tree
             var paramInfo = atom.MethodInfo.GetParameters();
 
@@ -347,7 +354,7 @@ namespace Pql.ExpressionEngine.Compiler
             return BuildSwitchStatementExpression(state, caseVariableNode, whenThenListNode, caseDefault);
         }
 
-        private Expression BuildSwitchStatementExpression(CompilerState state, ParseTreeNode caseVariableNode, ParseTreeNode whenThenListNode, Expression caseDefault)
+        private Expression BuildSwitchStatementExpression(CompilerState state, ParseTreeNode caseVariableNode, ParseTreeNode whenThenListNode, Expression? caseDefault)
         {
             var switchVariable = Analyze(caseVariableNode.ChildNodes[0], state);
             switchVariable.RequireNonVoid(caseVariableNode.ChildNodes[0]);
@@ -359,7 +366,11 @@ namespace Pql.ExpressionEngine.Compiler
 
             var cases = new List<Tuple<Expression[], Expression, ParseTreeNode>>(whenThenListNode.ChildNodes.Count);
             Expression? firstNonVoidThen = null;
-            var mustReturnNullable = false;
+            var mustReturnNullable = caseDefault is null || caseDefault.IsVoid();
+            if (caseDefault is null)
+            {
+                caseDefault = PredefinedAtom_VoidNull(whenThenListNode, state);
+            }
 
             foreach (var caseWhenThenNode in whenThenListNode.ChildNodes)
             {
@@ -422,7 +433,7 @@ namespace Pql.ExpressionEngine.Compiler
 
             var adjustedCaseDefault = caseDefault;
 
-            // now try to adjust whatever remaining VOID "then-s" to the first-met non-void then
+            // now try to adjust all return "then-s" to the first-met non-void then, potentially adding nullability
             // if all THENs are void, then just leave it as-is - type will be adjusted by caller
             if (firstNonVoidThen != null)
             {
@@ -438,7 +449,7 @@ namespace Pql.ExpressionEngine.Compiler
                     var thenNode = cases[i].Item3;
                     var then = cases[i].Item2;
 
-                    if (!ReferenceEquals(then, firstNonVoidThen) && then.IsVoid())
+                    if (!ReferenceEquals(then, firstNonVoidThen) && then.Type != firstNonVoidThen.Type)
                     {
                         if (ExpressionTreeExtensions.TryAdjustReturnType(thenNode, then, firstNonVoidThen.Type, out var adjusted))
                         {
@@ -481,9 +492,10 @@ namespace Pql.ExpressionEngine.Compiler
         {
             // now start building on top of the tail, right to left, 
             // also making sure that types are compatible
-            var tail = caseDefault;
+            var mustReturnNullable = false;
 
-            for (var i = whenThenListNode.ChildNodes.Count - 1; i >= 0; i--)
+            var cases = new List<(ParseTreeNode whenNode, Expression when, ParseTreeNode thenNode, Expression then)>();
+            for (var i = 0; i < whenThenListNode.ChildNodes.Count; i++)
             {
                 var caseWhenThenNode = whenThenListNode.RequireChild("caseWhenThen", i);
                 caseWhenThenNode.RequireChildren(4);
@@ -501,15 +513,48 @@ namespace Pql.ExpressionEngine.Compiler
                 when.RequireBoolean(whenNode);
 
                 var then = Analyze(thenNode, state);
+                cases.Add(new(whenNode, when, thenNode, then));
+
+                if (then.IsVoid() || then.IsNullableType())
+                {
+                    mustReturnNullable = true;
+                }
+            }
+
+            if (caseDefault == null)
+            {
+                caseDefault = PredefinedAtom_VoidNull(whenThenListNode, state);
+            }
+
+            if (mustReturnNullable && !caseDefault.IsNullableType())
+            {
+                caseDefault = ExpressionTreeExtensions.MakeNewNullable(
+                        typeof(UnboxableNullable<>).MakeGenericType(caseDefault.Type),
+                        caseDefault);
+            }
+
+            var tail = caseDefault;
+
+            // now adjust return types for all then
+            for (var i = cases.Count - 1; i >= 0; i--)
+            {
+                var item = cases[i];
+
+                if (mustReturnNullable && !item.then.IsNullableType())
+                {
+                    item.then = ExpressionTreeExtensions.MakeNewNullable(
+                        typeof(UnboxableNullable<>).MakeGenericType(item.then.Type),
+                        item.then);
+                }
 
                 // try to auto-adjust types of this "THEN" and current tail expression if needed
                 if (tail != null)
                 {
-                    if (ExpressionTreeExtensions.TryAdjustReturnType(thenNode, then, tail.Type, out var adjusted))
+                    if (ExpressionTreeExtensions.TryAdjustReturnType(item.thenNode, item.then, tail.Type, out var adjusted))
                     {
-                        then = adjusted;
+                        item.then = adjusted;
                     }
-                    else if (ExpressionTreeExtensions.TryAdjustReturnType(thenNode, tail, then.Type, out adjusted))
+                    else if (ExpressionTreeExtensions.TryAdjustReturnType(item.thenNode, tail, item.then.Type, out adjusted))
                     {
                         tail = adjusted;
                     }
@@ -518,24 +563,25 @@ namespace Pql.ExpressionEngine.Compiler
                         throw new CompilationException(
                             string.Format(
                                 "Incompatible types within CASE statement. Tail is of type {0}, and then is of type {1}",
-                                tail.Type.FullName, then.Type.FullName), thenNode);
+                                tail.Type.FullName, item.then.Type.FullName), item.thenNode);
                     }
                 }
 
-                if (when is ConstantExpression constWhen)
+                if (item.when is ConstantExpression constWhen)
                 {
-                    if ((bool)constWhen.Value)
+                    if (constWhen.Value is bool b && b)
                     {
-                        tail = then;
+                        tail = item.then;
                     }
                 }
                 else
                 {
-                    tail = Expression.Condition(when, then, tail ?? ExpressionTreeExtensions.GetDefaultExpression(then.Type));
+                    tail = Expression.Condition(item.when, item.then, tail);
                 }
             }
 
-            return tail;
+            return tail 
+                ?? throw new CompilationException("Could not determine result expression for CASE", whenThenListNode);
         }
 
         private Expression BuildIsNullPredicate(ParseTreeNode root, CompilerState state, bool compareIsNull)
@@ -752,7 +798,8 @@ namespace Pql.ExpressionEngine.Compiler
 
                         return expr;
 
-                    default: return op switch
+                    default:
+                        return op switch
                         {
                             "+" => ConstantHelper.TryEvalConst(root, ReflectionHelper.StringConcat, leftExpr, rightExpr),
                             ">" => ConstantHelper.TryEvalConst(root, PrepareStringComparison(root, leftExpr, rightExpr), Expression.Constant(0), ExpressionType.GreaterThan),
@@ -838,7 +885,10 @@ namespace Pql.ExpressionEngine.Compiler
             object matchingSet;
             try
             {
-                matchingSet = valueEnumerator.Invoke(null, new object[] { this, rightNodeList, state });
+                // this produces a HashSet<T>, which we must use via reflection,
+                // because T is only known at run time
+                matchingSet = valueEnumerator.Invoke(null, new object[] { this, rightNodeList, state })
+                    ?? throw new Exception("Failed to retrieve matching set from underlying enumerator");
             }
             catch (TargetInvocationException e)
             {
@@ -851,10 +901,10 @@ namespace Pql.ExpressionEngine.Compiler
             }
 
             // how many items do we have there?
-            var countProperty = matchingSet.GetType().GetProperty("Count", BindingFlags.Instance | BindingFlags.Public);
-            var count = (int)countProperty.GetValue(matchingSet);
+            var countProperty = matchingSet.GetType().RequireProperty("Count");
+            var count = (int)countProperty.GetValue(matchingSet)!;
 
-            Expression contains;
+            Expression? contains;
             if (leftExpr is ConstantExpression leftArgConst)
             {
                 // since list is constant and argument is constant, let's just evaluate it
@@ -886,7 +936,7 @@ namespace Pql.ExpressionEngine.Compiler
                     IEnumerator enumerator;
                     try
                     {
-                        enumerator = (IEnumerator)enumeratorMethod.Invoke(matchingSet, null);
+                        enumerator = (IEnumerator)enumeratorMethod.Invoke(matchingSet, null)!;
                     }
                     catch (TargetInvocationException e)
                     {
@@ -905,6 +955,11 @@ namespace Pql.ExpressionEngine.Compiler
                             ? PrepareStringEquality(rightNodeList, leftExpr, Expression.Constant(enumerator.Current, leftExpr.Type))
                             : Expression.Equal(leftExpr, Expression.Constant(enumerator.Current, leftExpr.Type));
                         contains = contains == null ? next : Expression.OrElse(contains, next);
+                    }
+
+                    if (contains is null)
+                    {
+                        contains = Expression.Constant(false);
                     }
                 }
                 else

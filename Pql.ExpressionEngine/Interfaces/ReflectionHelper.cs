@@ -130,12 +130,7 @@ namespace Pql.ExpressionEngine.Interfaces
                 ? type.GetMethod(methodName, bindingFlags)
                 : type.GetMethod(methodName, bindingFlags, null, argTypes, null);
 
-            if (methodInfo == null)
-            {
-                throw new Exception("Failed to reflect a method: " + methodName);
-            }
-
-            return methodInfo;
+            return methodInfo ?? throw new Exception($"Failed to reflect a method {methodName} on {type.FullName}");
         }
 
         private readonly static ConcurrentDictionary<Tuple<Type, string>, MethodInfo> s_methods = new();

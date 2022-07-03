@@ -39,7 +39,7 @@ namespace Pql.ExpressionEngine.Compiler
 
             _expressionParsers = new ObjectPool<Parser>(maxDegreeOfParallelism, () => new Parser(s_langData, s_expressionNonTerminal));
 
-            RegisterAtom(new AtomMetadata(AtomType.Identifier, "Null", PredefinedAtom_Null));
+            RegisterAtom(new AtomMetadata(AtomType.Identifier, "Null", PredefinedAtom_VoidNull));
             RegisterAtom(new AtomMetadata(AtomType.Function, "IsNull", PredefinedAtom_IsNull));
             RegisterAtom(new AtomMetadata(AtomType.Function, "IfNull", PredefinedAtom_IfNull));
             RegisterAtom(new AtomMetadata(AtomType.Identifier, "false", PredefinedAtom_False));
@@ -116,14 +116,14 @@ namespace Pql.ExpressionEngine.Compiler
             var arg2Node = root.RequireChild(null, 1, 0, 1);
             var ifnull = state.ParentRuntime.Analyze(arg2Node, state);
 
-            if (!ExpressionTreeExtensions.TryAdjustVoid(ref argument, ref ifnull))
-            {
-                throw new CompilationException("Could not adjust void blocks", root);
-            }
-
             if (argument.IsVoid())
             {
                 return ifnull;
+            }
+
+            if (!ExpressionTreeExtensions.TryAdjustVoid(ref argument, ref ifnull))
+            {
+                return PredefinedAtom_VoidNull(root, state);
             }
 
             ifnull = ExpressionTreeExtensions.AdjustReturnType(arg2Node, ifnull, argument.Type.RequireUnderlyingType());
@@ -160,9 +160,10 @@ namespace Pql.ExpressionEngine.Compiler
             return BuildIsNullPredicate(arg1Node, state, true);
         }
 
-        private static Expression PredefinedAtom_NewGUID(ParseTreeNode root, CompilerState state) => Expression.Call(typeof(Guid), "NewGuid", null);
+        private static Expression PredefinedAtom_NewGUID(ParseTreeNode root, CompilerState state) => 
+            Expression.Call(typeof(Guid), "NewGuid", null);
 
-        private static Expression PredefinedAtom_Null(ParseTreeNode root, CompilerState state) =>
+        private static Expression PredefinedAtom_VoidNull(ParseTreeNode root, CompilerState state) =>
             // clients are responsible for translating this expression into appropriate type
             ExpressionTreeExtensions.MakeNewNullable(typeof(UnboxableNullable<ExpressionTreeExtensions.VoidTypeMarker>));
 
@@ -266,14 +267,14 @@ namespace Pql.ExpressionEngine.Compiler
             if (ReferenceEquals(value.Type, typeof(Double)))
             {
                 return constExpr != null
-                           ? Expression.Constant(Double.IsNaN((Double)constExpr.Value!))
+                           ? Expression.Constant(Double.IsNaN((Double)constExpr.Value))
                            : Expression.Call(ReflectionHelper.DoubleIsNaN, value);
             }
 
             if (ReferenceEquals(value.Type, typeof(Single)))
             {
                 return constExpr != null
-                           ? Expression.Constant(Single.IsNaN((Single)constExpr.Value!))
+                           ? Expression.Constant(Single.IsNaN((Single)constExpr.Value))
                            : Expression.Call(ReflectionHelper.SingleIsNaN, value);
             }
 
@@ -293,14 +294,14 @@ namespace Pql.ExpressionEngine.Compiler
             if (ReferenceEquals(value.Type, typeof(Double)))
             {
                 return constExpr != null
-                           ? Expression.Constant(Double.IsInfinity((Double)constExpr.Value!))
+                           ? Expression.Constant(Double.IsInfinity((Double)constExpr.Value))
                            : Expression.Call(ReflectionHelper.DoubleIsInfinity, value);
             }
 
             if (ReferenceEquals(value.Type, typeof(Single)))
             {
                 return constExpr != null
-                           ? Expression.Constant(Single.IsInfinity((Single)constExpr.Value!))
+                           ? Expression.Constant(Single.IsInfinity((Single)constExpr.Value))
                            : Expression.Call(ReflectionHelper.SingleIsInfinity, value);
             }
 
@@ -387,7 +388,7 @@ namespace Pql.ExpressionEngine.Compiler
             // maybe we don't have to change type, or simply cast the numeric type?
             if (ExpressionTreeExtensions.TryAdjustReturnType(root, value, targetType, out var adjusted))
             {
-                return adjusted!;
+                return adjusted;
             }
 
             if (value.IsString())

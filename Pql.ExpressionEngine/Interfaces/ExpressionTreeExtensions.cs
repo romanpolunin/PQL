@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -790,7 +791,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <param name="adjusted">New or same expression</param>
         /// <exception cref="ArgumentNullException"><paramref name="expr"/> is null</exception>
         /// <exception cref="ArgumentNullException"><paramref name="targetType"/> is null</exception>
-        public static bool TryAdjustReturnType(ParseTreeNode? root, Expression expr, Type targetType, out Expression? adjusted)
+        public static bool TryAdjustReturnType(ParseTreeNode? root, Expression expr, Type targetType, [NotNullWhen(true)] out Expression? adjusted)
         {
             if (expr == null)
             {
@@ -996,7 +997,9 @@ namespace Pql.ExpressionEngine.Interfaces
             }
 
             var isString = ReferenceEquals(typeof(T), typeof(string));
-            var result = isString ? new HashSet<T>((IEqualityComparer<T>)StringComparer.OrdinalIgnoreCase) : new HashSet<T>();
+            var result = isString 
+                ? new HashSet<T>((IEqualityComparer<T>)StringComparer.OrdinalIgnoreCase) 
+                : new HashSet<T>();
 
             foreach (var childNode in root.ChildNodes)
             {
@@ -1012,7 +1015,7 @@ namespace Pql.ExpressionEngine.Interfaces
                     throw new CompilationException(
                         String.Format(
                             "All items in the IN arguments list must be constants of type compatible with {0}. Actual expression found: {1}, of type {2}",
-                            typeof(T).FullName, item.NodeType, item.Type), childNode);
+                            typeof(T).FullName, item.NodeType, item.Type.FullName), childNode);
                 }
             }
 
@@ -1061,7 +1064,7 @@ namespace Pql.ExpressionEngine.Interfaces
             {
                 if (y.IsVoid())
                 {
-                    return true;
+                    return false;
                 }
 
                 x = GetDefaultExpression(y.Type.RequireUnderlyingType());
@@ -1077,7 +1080,7 @@ namespace Pql.ExpressionEngine.Interfaces
         public static Expression ForEach<TSource>(this Expression enumerable, Expression loopContent)
         {
             var enumerableType = enumerable.Type;
-            MethodInfo getEnumerator = enumerableType.GetMethod("GetEnumerator")
+            var getEnumerator = enumerableType.GetMethod("GetEnumerator")
                 ?? typeof(IEnumerable<>).MakeGenericType(typeof(TSource)).GetMethod("GetEnumerator")
                 ?? throw new Exception("Failed to find or make an enumerator method on " + typeof(TSource).FullName);
 
@@ -1110,7 +1113,7 @@ namespace Pql.ExpressionEngine.Interfaces
         static Expression EnumerationLoop(this ParameterExpression enumerator, Expression loopContent)
         {
             var loop = While(
-                Expression.Call(enumerator, typeof(IEnumerator).GetMethod("MoveNext")!),
+                Expression.Call(enumerator, typeof(IEnumerator).RequireMethod0("MoveNext")),
                 loopContent);
 
             var enumeratorType = enumerator.Type;
@@ -1128,7 +1131,7 @@ namespace Pql.ExpressionEngine.Interfaces
                         Expression.Assign(disposable, Expression.TypeAs(enumerator, typeof(IDisposable))),
                         Expression.IfThen(
                             Expression.NotEqual(disposable, Expression.Constant(null)),
-                            Expression.Call(disposable, typeof(IDisposable).GetMethod("Dispose")!))));
+                            Expression.Call(disposable, typeof(IDisposable).RequireMethod0("Dispose")))));
             }
 
             return loop;
@@ -1143,7 +1146,7 @@ namespace Pql.ExpressionEngine.Interfaces
                 throw new Exception($"'{variableType.FullName}': type used in a using statement must be implicitly convertible to 'System.IDisposable'");
             }
 
-            var disposeMethod = typeof(IDisposable).GetMethod("Dispose")!;
+            var disposeMethod = typeof(IDisposable).RequireMethod0("Dispose");
 
             if (variableType.IsValueType)
             {
@@ -1178,14 +1181,17 @@ namespace Pql.ExpressionEngine.Interfaces
 
         public static FieldInfo RequireField(this Type type, string fieldName)
         {
-            var field = type.GetField(fieldName);
-            return field ?? throw new ArgumentException($"Could not find field {fieldName} on type {type.FullName}");
+            var field = type.GetField(fieldName, BindingFlags.Public | BindingFlags.Instance);
+            return field ?? throw new ArgumentException($"Could not find public instance field {fieldName} on type {type.FullName}");
         }
 
         public static PropertyInfo RequireProperty(this Type type, string propertyName)
         {
-            var property = type.GetProperty(propertyName);
+            var property = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
             return property ?? throw new ArgumentException($"Could not find public instance property {propertyName} on type {type.FullName}");
         }
+
+        public static MethodInfo RequireMethod0(this Type type, string methodName) =>
+            ReflectionHelper.GetOrAddMethod0(type, methodName);
     }
 }

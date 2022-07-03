@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Pql.ExpressionEngine.Compiler;
 using Pql.ExpressionEngine.Interfaces;
 
+#pragma warning disable IDE0049 
 namespace Pql.ExpressionEngine.UnitTest
 {
     [TestClass]
@@ -50,23 +51,23 @@ namespace Pql.ExpressionEngine.UnitTest
             s_elapsedMilliseconds = 0;
             s_totalOperations = 0;
 
-            Action test = () =>
+            void test()
+            {
+                start.Wait();
+
+                var watch = Stopwatch.StartNew();
+                for (var i = 0; i < numPerThread; i++)
                 {
-                    start.Wait();
+                    _runtime.Compile<float, bool>("case case (@context) WHEN -1 then true WHEN (cast(1+0.5,'Single')) THEN true END WHEN true THEN false ELSE true end")(1.4f);
+                }
 
-                    var watch = Stopwatch.StartNew();
-                    for (var i = 0; i < numPerThread; i++)
-                    {
-                        _runtime.Compile<float, bool>("case case (@context) WHEN -1 then true WHEN (cast(1+0.5,'Single')) THEN true END WHEN true THEN false ELSE true end")(1.4f);
-                    }
+                watch.Stop();
 
-                    watch.Stop();
+                Interlocked.Add(ref s_elapsedMilliseconds, watch.ElapsedMilliseconds);
+                Interlocked.Add(ref s_totalOperations, numPerThread);
 
-                    Interlocked.Add(ref s_elapsedMilliseconds, watch.ElapsedMilliseconds);
-                    Interlocked.Add(ref s_totalOperations, numPerThread);
-
-                    stop.Release();
-                };
+                stop.Release();
+            }
 
             var threads = new Thread[numThreads];
             for (var i = 0; i < threads.Length; i++)
@@ -313,6 +314,54 @@ namespace Pql.ExpressionEngine.UnitTest
             Assert.IsFalse(eval4(1.5f));
             Assert.IsTrue(eval4(1.4f));
             Assert.IsFalse(eval4(-1f));
+
+            var eval5 = _runtime.Compile<UnboxableNullable<int>, int>(
+                "case @context when 1 then 1 when 2 then 2 end");
+            Assert.AreEqual(1, eval5(1));
+            Assert.AreEqual(2, eval5(2));
+            Assert.AreEqual(0, eval5(3));
+
+            var eval6 = _runtime.Compile<UnboxableNullable<int>, UnboxableNullable<int>>(
+                "case @context when 1 then 1 when 2 then 2 end");
+            Assert.AreEqual(1, eval6(1));
+            Assert.AreEqual(2, eval6(2));
+            Assert.AreEqual(0.Null(), eval6(3));
+
+            eval6 = _runtime.Compile<UnboxableNullable<int>, UnboxableNullable<int>>(
+                "case @context when 1 then 1 when 2 then 2 else null end");
+            Assert.AreEqual(1, eval6(1));
+            Assert.AreEqual(2, eval6(2));
+            Assert.AreEqual(0.Null(), eval6(3));
+
+            eval6 = _runtime.Compile<UnboxableNullable<int>, UnboxableNullable<int>>(
+                "case @context when 1 then 1 when 2 then null end");
+            Assert.AreEqual(1, eval6(1));
+            Assert.AreEqual(0.Null(), eval6(2));
+            Assert.AreEqual(0.Null(), eval6(3));
+
+            eval6 = _runtime.Compile<UnboxableNullable<int>, UnboxableNullable<int>>(
+                "case @context when 1 then 1 when 2 then null else null end");
+            Assert.AreEqual(1, eval6(1));
+            Assert.AreEqual(0.Null(), eval6(2));
+            Assert.AreEqual(0.Null(), eval6(3));
+
+            eval6 = _runtime.Compile<UnboxableNullable<int>, UnboxableNullable<int>>(
+                "case @context when 1 then null when 2 then 2 else null end");
+            Assert.AreEqual(0.Null(), eval6(1));
+            Assert.AreEqual(2, eval6(2));
+            Assert.AreEqual(0.Null(), eval6(3));
+
+            eval6 = _runtime.Compile<UnboxableNullable<int>, UnboxableNullable<int>>(
+                "case when @context = 1 then null when @context = 2 then 2 end");
+            Assert.AreEqual(0.Null(), eval6(1));
+            Assert.AreEqual(2, eval6(2));
+            Assert.AreEqual(0.Null(), eval6(3));
+
+            eval6 = _runtime.Compile<UnboxableNullable<int>, UnboxableNullable<int>>(
+                "case when @context = 1 then null when @context = 2 then 2 else null end");
+            Assert.AreEqual(0.Null(), eval6(1));
+            Assert.AreEqual(2, eval6(2));
+            Assert.AreEqual(0.Null(), eval6(3));
         }
 
         class SomeItem
@@ -486,7 +535,7 @@ namespace Pql.ExpressionEngine.UnitTest
         {
             root.RequireChildren(2);
             var method = typeof(string).GetMethod(
-                methodName, BindingFlags.Instance | BindingFlags.Public, 
+                methodName, BindingFlags.Instance | BindingFlags.Public,
                 null, new[] { typeof(string), typeof(StringComparison) }, null)
                 ?? throw new Exception($"Failed to get method {methodName} on string");
 
@@ -675,10 +724,22 @@ namespace Pql.ExpressionEngine.UnitTest
             Assert.AreEqual(6, Eval<UnboxableNullable<int>, int>("1 + CASE WHEN @context IS NULL THEN 5 ELSE NULL END", 0.Null()));
             Assert.AreEqual(6, Eval<UnboxableNullable<int>, int>("1 + CASE WHEN @context IS NOT NULL THEN NULL ELSE 5 END", 0.Null()));
 
-            Assert.AreEqual("test", Eval<string?, string>("IfNull(null, 'test')", null));
-            Assert.AreEqual(null, Eval<string?, string>("IfNull(null, null)", null));
-            Assert.AreEqual("test", Eval<string?, string>("IfNull('test', 't')", null));
+            Assert.AreEqual(default, Eval<object>("IfNull(null, null)"));
+            Assert.AreEqual(default, Eval<int>("IfNull(null, null)"));
+            Assert.AreEqual(default, Eval<int?>("IfNull(null, null)"));
+            Assert.AreEqual(true, Eval<bool>("IfNull(null, null) is null"));
+            Assert.AreEqual(false, Eval<bool>("IfNull(null, null) is not null"));
+            Assert.AreEqual(true, Eval<bool>("IfNull(null, 1) is not null"));
+            Assert.AreEqual(false, Eval<bool>("IfNull(null, 1) is null"));
+            Assert.AreEqual("test", Eval<string>("IfNull(null, 'test')"));
+            Assert.AreEqual("test", Eval<string>("IfNull('test', 't')"));
+            Assert.AreEqual(0, Eval<int>("IfNull(0, 1)"));
+            Assert.AreEqual(1, Eval<UnboxableNullable<int>, int>("IfNull(@context, 1)", 0.Null()));
+            Assert.AreEqual(0, Eval<UnboxableNullable<int>, int>("IfNull(@context, 1)", 0));
+            Assert.AreEqual(true, Eval<UnboxableNullable<int>, bool>("IfNull(null, @context) is null", 0.Null()));
+            Assert.AreEqual(false, Eval<UnboxableNullable<int>, bool>("IfNull(null, @context) is null", 0));
             Assert.AreEqual("test", Eval<string?, string>("IfNull(@context, 'test')", null));
+            Assert.AreEqual(default, Eval<string?, string>("IfNull(@context, null)", null));
             Assert.AreEqual("test", Eval<string, string>("IfNull(@context, 't')", "test"));
             Assert.AreEqual(1, Eval<int>("IfNull(1, 2)"));
             Assert.AreEqual(1, Eval<UnboxableNullable<int>, int>("IfNull(@context, 2)", 1));
@@ -970,13 +1031,13 @@ namespace Pql.ExpressionEngine.UnitTest
 
         private void CheckValue<T>(T expected, string text)
         {
-            var evaluator = _runtime.Compile<object, T>(text);
+            var evaluator = _runtime.Compile<object?, T>(text);
             var result = evaluator(null);
             Assert.AreEqual(expected, result);
 
             Debug.WriteLine(text + " = " + result);
 
-            if (!ReferenceEquals(result, null))
+            if (result is not null)
             {
                 var systemType = typeof(T);
                 Assert.AreSame(result.GetType(), systemType);
