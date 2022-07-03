@@ -150,7 +150,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// Dummy value to help detect bugs.
         /// </summary>
-        InvalidValue,
+        InvalidValue = default,
         /// <summary>
         /// Identifier (non-function, non-array).
         /// </summary>

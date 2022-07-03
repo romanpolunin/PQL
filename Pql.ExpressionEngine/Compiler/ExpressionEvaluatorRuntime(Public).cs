@@ -36,7 +36,7 @@ namespace Pql.ExpressionEngine.Compiler
 
             if (atom.ExpressionGenerator == null)
             {
-                throw new ArgumentException("Atom handlers must have non-null ExpressionGenerator member", nameof(atom));
+                throw new ArgumentException("Dynamic atom handlers must have ExpressionGenerator set", nameof(atom));
             }
 
             _atomHandlers.Add(atom);

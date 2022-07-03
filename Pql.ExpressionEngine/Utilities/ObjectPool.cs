@@ -3,13 +3,13 @@ using System.Collections.Concurrent;
 namespace Pql.ExpressionEngine.Utilities
 {
     /// <summary>
-    /// Implements object pool.
+    /// Implements object pool with bounded capacity.
     /// </summary>
     /// <typeparam name="T">Type of object to hold</typeparam>
     internal class ObjectPool<T> where T : class
     {
-        private readonly Func<T> m_objectFactory;
-        private readonly BlockingCollection<T> m_items;
+        private readonly Func<T> _objectFactory;
+        private readonly BlockingCollection<T> _items;
 
         /// <summary>
         /// Ctr.
@@ -23,17 +23,14 @@ namespace Pql.ExpressionEngine.Utilities
                 throw new ArgumentOutOfRangeException(nameof(boundedCapacity), boundedCapacity, "Capacity cap must be positive");
             }
 
-            m_objectFactory = objectFactory;
-            m_items = new BlockingCollection<T>(boundedCapacity);
+            _objectFactory = objectFactory;
+            _items = new BlockingCollection<T>(boundedCapacity);
         }
 
         /// <summary>
         /// Maximum number of objects to be held.
         /// </summary>
-        public int Capacity
-        {
-            get { return m_items.BoundedCapacity; }
-        }
+        public int Capacity => _items.BoundedCapacity;
 
         /// <summary>
         /// Attempts to take an available object from pool.
@@ -42,14 +39,14 @@ namespace Pql.ExpressionEngine.Utilities
         /// <returns>Helper to facilitate guaranteed return of the object to the pool</returns>
         public ObjectPoolAccessor Take(CancellationToken cancellation)
         {
-            if (m_objectFactory == null)
+            if (_objectFactory == null)
             {
-                return new ObjectPoolAccessor(this, m_items.Take(cancellation));
+                return new ObjectPoolAccessor(this, _items.Take(cancellation));
             }
 
-            if (!m_items.TryTake(out var item, 0, cancellation))
+            if (!_items.TryTake(out var item, 0, cancellation))
             {
-                item = m_objectFactory();
+                item = _objectFactory();
             }
 
             return new ObjectPoolAccessor(this, item);
@@ -62,32 +59,32 @@ namespace Pql.ExpressionEngine.Utilities
         /// <exception cref="Exception">Bounded capacity exceeded</exception>
         public void Return(T item)
         {
-            if (!m_items.TryAdd(item) && m_objectFactory == null)
+            if (!_items.TryAdd(item) && _objectFactory == null)
             {
                 throw new InvalidOperationException("Could not return an item to the pool. Capacity must have been exceeded");
             }
         }
 
         /// <summary>
-        /// Helper to facilitate IDisposable pattern.
+        /// Helper to facilitate IDisposable approach for returning objects to the parent pool.
         /// </summary>
         public class ObjectPoolAccessor : IDisposable
         {
-            private readonly ObjectPool<T> m_pool;
-            private T? m_item;
+            private readonly ObjectPool<T> _pool;
+            private T? _item;
 
             /// <summary>
             /// Element to be returned to the pool once this holder is disposed.
             /// </summary>
-            public T Item { get { return m_item ?? throw new ObjectDisposedException("item"); } }
+            public T Item => _item ?? throw new ObjectDisposedException("item");
 
             /// <summary>
             /// Ctr.
             /// </summary>
             public ObjectPoolAccessor(ObjectPool<T> pool, T item)
             {
-                m_pool = pool ?? throw new ArgumentNullException(nameof(pool));
-                m_item = item ?? throw new ArgumentNullException(nameof(item));
+                _pool = pool ?? throw new ArgumentNullException(nameof(pool));
+                _item = item ?? throw new ArgumentNullException(nameof(item));
             }
 
             /// <summary>
@@ -101,10 +98,10 @@ namespace Pql.ExpressionEngine.Utilities
                     return;
                 }
 
-                var item = Interlocked.CompareExchange(ref m_item, null, m_item);
+                var item = Interlocked.CompareExchange(ref _item, null, _item);
                 if (item != null)
                 {
-                    m_pool.Return(item);
+                    _pool.Return(item);
                 }
             }
         }
