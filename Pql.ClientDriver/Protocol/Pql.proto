@@ -1,0 +1,131 @@
+﻿syntax = "proto3";
+
+import "google/protobuf/duration.proto";  
+import "google/protobuf/timestamp.proto";
+
+package PqlV1;
+
+option csharp_namespace = "Pql.ClientDriver.Protocol.Wire";
+
+service PqlService
+{
+    rpc Request (stream PqlRequestItem) returns (stream PqlResponseItem);
+}
+
+message PqlRequestItem
+{
+    oneof item 
+    {
+        DataRequest header = 1;
+        DataRequestParams params_header = 2;
+        bytes params_row = 3;
+        DataRequestBulk bulk_header = 4;
+        bytes bulk_row = 5;
+    }
+}
+
+message PqlResponseItem
+{
+    oneof item
+    {
+        DataResponse header = 1;
+        bytes row = 2;
+    }
+}
+
+message AuthenticationContext
+{
+    // Authentication session id.
+    string context_id = 1;
+    // Name of the connecting application, for server-side monitoring.
+    string application_name = 2;
+    // Identifier of the tenant, only relevant for multi-tenant systems.
+    string tenant_id = 3;
+    // Identifier of the connected user.
+    string user_id = 4;
+}
+
+message DataRequest 
+{
+    // Timestamp of when this message was created on the caller side.
+    google.protobuf.Timestamp created_wire = 1;
+    // Call scope id, for multi-server traversal.
+    string scope_id = 2;
+
+    // Authentication info.
+    AuthenticationContext auth = 3;
+
+    // SQL or other command.
+    string command_text = 4;
+
+    // True to indicate that client wants server to validate the query and cache execution plan.
+    // If true, server will not perform any actual data access beside query compilation and validation.
+    bool prepare_only = 5;
+
+    // True to indicate that client is expecting to receive a dataset in response.
+    // If false, server will only stream the general status response back.
+    bool return_dataset = 6;
+}
+
+message DataRequestParams
+{
+    // Names of parameters.
+    // Number of elements in <see cref="Names"/> and other arrays must match.
+    repeated string names = 1;
+
+    // DBType types of parameters, maps to System.Data.DBType. 
+    // For parameters with collections, indicates individual element's type.
+    // Number of elements in <see cref="Names"/> and other arrays must match.
+    repeated int32 data_types_wire = 2;
+
+    // A BitVector. For every parameter, corresponding bit indicates whether parameter comes with a collection of values.
+    // Number of elements in <see cref="Names"/> and other arrays must match. 
+    repeated int32 is_collection_flags = 3;
+}
+
+message DataResponse
+{
+    // Error code. Zero for success.
+    int32 error_code = 1;
+
+    // Detailed error information.
+    string server_message = 2;
+
+    // Field metadata. Should be null if <see cref="ErrorCode"/> is non-zero.
+    repeated DataResponseField fields = 3;
+
+    // Number of records affected by non-query command.
+    int32 records_affected = 4;
+}
+
+message DataResponseField
+{
+    // Internal name of the field.
+    string name = 1;
+
+    // Display name of the field.
+    string display_name = 2;
+
+    // DBType of the field, maps to System.Data.DBType.
+    int32 data_type_wire = 3;
+
+    // Index of this field in the response dataset.
+    int32 ordinal = 4;
+}
+
+message DataRequestBulk
+{
+    // StatementType of this bulk command, maps to System.Data.StatementType.
+    int32 db_statement_type_wire = 1;
+
+    // Name of the entity that we select, insert, update or delete.
+    string entity_name = 2;
+
+    // Identifiers of fields whose values will be inserted.
+    repeated string field_names = 3;
+
+    // Number of items that are going to be sent as part of this command.
+    // Helps processor to pre-allocate capacity for large INSERTs.
+    // Is not used for other statement types.
+    int32 input_items_count = 4;
+}
