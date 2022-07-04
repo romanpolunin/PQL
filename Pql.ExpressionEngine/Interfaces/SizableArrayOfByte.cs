@@ -90,7 +90,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// Copies data from <paramref name="src"/>.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public void CopyFrom(SizableArrayOfByte src)
         {
             if (src == null)
@@ -112,7 +112,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// Copies data from <paramref name="src"/>.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public void CopyFrom(byte[] src)
         {
             if (src == null)
@@ -132,7 +132,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// Appends a byte at the end.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public void Append(byte item)
         {
             AssertState();
@@ -182,7 +182,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// Ensures that <see cref="Data"/> can hold <paramref name="capacity"/> bytes.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public void EnsureCapacity(int capacity)
         {
             AssertState();
@@ -213,7 +213,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// Ensures capacity of <see cref="Data"/> and also assigns <see cref="Length"/>.
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public void SetLength(int length)
         {
             EnsureCapacity(length);
