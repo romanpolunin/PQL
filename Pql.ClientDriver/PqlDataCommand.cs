@@ -185,7 +185,7 @@ namespace Pql.ClientDriver
             }
         }
 
-        private async Task<DataResponse> SendCommand(PqlCall pqlCall, DataRequest dataRequest, DataRequestParams dataRequestParams, DataRequestBulk dataRequestBulk)
+        private async Task<DataResponse> SendCommand(PqlCall pqlCall, DataRequest dataRequest, DataRequestParams? dataRequestParams, DataRequestBulk? dataRequestBulk)
         {
             await pqlCall.RequestStream.WriteAsync(new PqlRequestItem { Header = dataRequest });
             if (dataRequestParams is not null)
