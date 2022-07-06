@@ -305,14 +305,14 @@ namespace Pql.ClientDriver
 
             var result = new DataRequestParams
             {
-                DataTypesWire = { new int[arr.Count] },
+                DataTypes = { new int[arr.Count] },
                 Names = { new string[arr.Count] },
                 IsCollectionFlags = { new int[BitVector.GetArrayLength(arr.Count)] }
             };
 
             for (var i = 0; i < arr.Count; i++)
             {
-                result.DataTypesWire[i] = (int)arr[i].DbType;
+                result.DataTypes[i] = (int)arr[i].DbType;
                 result.Names[i] = arr[i].ParameterName;
                 if (arr[i].IsValidatedCollection)
                 {

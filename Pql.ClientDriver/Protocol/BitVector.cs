@@ -133,7 +133,7 @@ namespace Pql.ClientDriver.Protocol
         /// Writes bitvector data to stream.
         /// </summary>
         /// <param name="bits">Bit data</param>
-        /// <param name="count">Number of elements in the bits data</param>
+        /// <param name="count">Number of bool values stored in <paramref name="bits"/></param>
         /// <param name="writer">Stream writer</param>        
         public static void Write(int[] bits, int count, BinaryWriter writer)
         {

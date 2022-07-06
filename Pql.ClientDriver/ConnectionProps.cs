@@ -1,30 +1,18 @@
-﻿using System;
-
-namespace Pql.ClientDriver
+﻿namespace Pql.ClientDriver
 {
     internal sealed class ConnectionProps
     {
-        private readonly string m_protocolVersion;
-
-        public readonly string RawString;
-        public readonly Uri EndpointAddress;
-        public readonly string ScopeId;
+        public readonly string? RawString;
+        public readonly Uri? EndpointAddress;
+        public readonly string? ScopeId;
         public readonly int ConnectionTimeoutSeconds;
 
-        public string Database
-        {
-            get { return ScopeId; }
-        }
+        public string? Database => ScopeId;
 
-        public string ProtocolVersion
-        {
-            get { return m_protocolVersion; }
-        }
+        public string ProtocolVersion { get; } = "default";
 
         public ConnectionProps(string connectionString)
         {
-            m_protocolVersion = "default";
-
             RawString = connectionString;
             
             if (string.IsNullOrEmpty(connectionString))
@@ -71,7 +59,7 @@ namespace Pql.ClientDriver
                 else if (0 == StringComparer.OrdinalIgnoreCase.Compare(pair[0], "Initial Catalog")
                          || 0 == StringComparer.OrdinalIgnoreCase.Compare(pair[0], "Database"))
                 {
-                    ScopeId = pair[1] == null ? null : pair[1].Trim();
+                    ScopeId = pair[1]?.Trim();
                 }
                 else
                 {

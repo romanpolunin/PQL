@@ -10,7 +10,7 @@ namespace Pql.ClientDriver.Protocol
     {
         public PqlDataConnection Connection;
 
-        public AsyncDuplexStreamingCall<PqlRequestItem, PqlResponseItem> StreamingCall;
+        public AsyncDuplexStreamingCall<PqlRequestItem, PqlResponseItem> PqlCall;
         
         private IDisposable[] _holders;
 
@@ -19,7 +19,7 @@ namespace Pql.ClientDriver.Protocol
         /// </summary>
         public Task<DataResponse> ReadResponse()
         {
-            return ReadResponseHeaders(StreamingCall);
+            return ReadResponseHeaders(PqlCall);
         }
 
         public static async Task<DataResponse> ReadResponseHeaders(AsyncDuplexStreamingCall<PqlRequestItem, PqlResponseItem> streamingCall)
@@ -48,7 +48,7 @@ namespace Pql.ClientDriver.Protocol
         public PqlProtocolUtility(PqlDataConnection connection, AsyncDuplexStreamingCall<PqlRequestItem, PqlResponseItem> streamingCall)
         {
             Connection = connection ?? throw new ArgumentNullException(nameof(connection));
-            StreamingCall = streamingCall ?? throw new ArgumentNullException(nameof(streamingCall));
+            PqlCall = streamingCall ?? throw new ArgumentNullException(nameof(streamingCall));
         }
 
         /// <summary>

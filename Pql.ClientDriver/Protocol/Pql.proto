@@ -12,14 +12,23 @@ service PqlService
     rpc Request (stream PqlRequestItem) returns (stream PqlResponseItem);
 }
 
+// GRPC does not support "stream" option inside message definition,
+// which is why we have to declare all possible small elements at the top element level,
+// and implement a state machine when reading the stream.
 message PqlRequestItem
 {
+    // Oneof items are declared below in the order they must come via stream.
     oneof item 
     {
+        // (One) Main request header.
         DataRequest header = 1;
+        // (One, Optional) parameters header.
         DataRequestParams params_header = 2;
+        // (Many, Optional) parameters data.
         bytes params_row = 3;
+        // (One, Optional) bulk command header
         DataRequestBulk bulk_header = 4;
+        // (Many, Optional) bulk command data rows.
         bytes bulk_row = 5;
     }
 }
@@ -49,7 +58,7 @@ message DataRequest
 {
     // Timestamp of when this message was created on the caller side.
     google.protobuf.Timestamp created_wire = 1;
-    // Call scope id, for multi-server traversal.
+    // Call scope id, to identify a target database on the backend.
     string scope_id = 2;
 
     // Authentication info.
@@ -76,11 +85,28 @@ message DataRequestParams
     // DBType types of parameters, maps to System.Data.DBType. 
     // For parameters with collections, indicates individual element's type.
     // Number of elements in <see cref="Names"/> and other arrays must match.
-    repeated int32 data_types_wire = 2;
+    repeated int32 data_types = 2;
 
     // A BitVector. For every parameter, corresponding bit indicates whether parameter comes with a collection of values.
     // Number of elements in <see cref="Names"/> and other arrays must match. 
     repeated int32 is_collection_flags = 3;
+}
+
+message DataRequestBulk
+{
+    // StatementType of this bulk command, maps to System.Data.StatementType.
+    int32 db_statement_type_wire = 1;
+
+    // Name of the entity that we select, insert, update or delete.
+    string entity_name = 2;
+
+    // Identifiers of fields whose values will be inserted.
+    repeated string field_names = 3;
+
+    // Number of items that are going to be sent as part of this command.
+    // Helps processor to pre-allocate capacity for large INSERTs.
+    // Is not used for other statement types.
+    int32 input_items_count = 4;
 }
 
 message DataResponse
@@ -111,21 +137,4 @@ message DataResponseField
 
     // Index of this field in the response dataset.
     int32 ordinal = 4;
-}
-
-message DataRequestBulk
-{
-    // StatementType of this bulk command, maps to System.Data.StatementType.
-    int32 db_statement_type_wire = 1;
-
-    // Name of the entity that we select, insert, update or delete.
-    string entity_name = 2;
-
-    // Identifiers of fields whose values will be inserted.
-    repeated string field_names = 3;
-
-    // Number of items that are going to be sent as part of this command.
-    // Helps processor to pre-allocate capacity for large INSERTs.
-    // Is not used for other statement types.
-    int32 input_items_count = 4;
 }

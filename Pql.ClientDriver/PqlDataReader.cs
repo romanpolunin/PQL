@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+
 using Pql.ClientDriver.Protocol;
 using Pql.ClientDriver.Protocol.Wire;
 
@@ -25,7 +26,7 @@ namespace Pql.ClientDriver
         private readonly RowData _currentRow;
         private readonly BinaryReader _reader;
         private readonly PqlProtocolUtility _protocolUtility;
-
+        private readonly PqlCall _pqlCall;
         private ReaderState _state;
 
         /// <summary>
@@ -43,7 +44,7 @@ namespace Pql.ClientDriver
                 
                 if (_scheme.Fields != null && _scheme.Fields.Count > 0)
                 {
-                    _currentRow = new RowData(_scheme.Fields.Select(x => (DbType)x.DataType).ToArray());
+                    _currentRow = new RowData(_scheme.Fields.Select(x => x.DataType).ToArray());
                     _state = ReaderState.New;
                 }
                 else
@@ -541,7 +542,16 @@ namespace Pql.ClientDriver
             {
                 try
                 {
-                    _state = _currentRow.Read(_reader) ? _state = ReaderState.Fetching : ReaderState.Closed;
+                    var haveItem = _protocolUtility.PqlCall.ResponseStream
+                        .MoveNext(CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
+                    if (haveItem)
+                    {
+                        _state = ReaderState.Fetching;
+                        using var stream = new MemoryStream(_protocolUtility.PqlCall.ResponseStream.Current.Row.ToByteArray());
+                        using var reader = new BinaryReader(stream);
+                        _currentRow.Read(reader);
+                    }
+                    _state = haveItem ? _state = ReaderState.Fetching : ReaderState.Closed;
                 }
                 catch
                 {
