@@ -11,8 +11,8 @@ namespace Pql.ExpressionEngine.Interfaces
     /// </summary>
     public static class ConstantHelper
     {
-        private static readonly ConcurrentDictionary<Tuple<ExpressionType, Type>, Tuple<object, MethodInfo>> s_unaryOperators = new();
-        private static readonly ConcurrentDictionary<Tuple<ExpressionType, Type, Type>, Tuple<object, MethodInfo>> s_binaryOperators = new();
+        private static readonly ConcurrentDictionary<(ExpressionType op, Type argType), (object valueMakerDelegate, MethodInfo method)> s_unaryOperators = new();
+        private static readonly ConcurrentDictionary<(ExpressionType op, Type argType1, Type argType2), (object valueMakerDelegate, MethodInfo method)> s_binaryOperators = new();
 
         /// <summary>
         /// If all arguments are constant expressions, evaluates <paramref name="methodInfo"/> and returns result wrapped in <see cref="ConstantExpression"/>.
@@ -225,33 +225,36 @@ namespace Pql.ExpressionEngine.Interfaces
             try
             {
                 var method = s_binaryOperators.GetOrAdd(
-                    new Tuple<ExpressionType, Type, Type>(op, left.Type,
-                        (op is ExpressionType.Convert or ExpressionType.ConvertChecked) ? (Type)right.Value : right.Type), tuple =>
+                    new (op, left.Type,
+                        (op is ExpressionType.Convert or ExpressionType.ConvertChecked) 
+                        ? (Type)(right.Value ?? throw new Exception("Internal error: value is null on right argument"))
+                        : right.Type), 
+                    tuple =>
                        {
-                           Delegate func;
+                           Delegate valueMakerDelegate;
                            if (op is ExpressionType.Convert or ExpressionType.ConvertChecked)
                            {
-                               var arg1 = Expression.Parameter(tuple.Item2);
-                               var type = tuple.Item3;
-                               var expr = Expression.MakeUnary(tuple.Item1, arg1, type);
-                               func = Expression.Lambda(Expression.GetFuncType(arg1.Type, type), expr, arg1).Compile();
+                               var arg1 = Expression.Parameter(tuple.argType1);
+                               var type = tuple.argType2;
+                               var expr = Expression.MakeUnary(tuple.op, arg1, type);
+                               valueMakerDelegate = Expression.Lambda(Expression.GetFuncType(arg1.Type, type), expr, arg1).Compile();
                            }
                            else
                            {
-                               var arg1 = Expression.Parameter(tuple.Item2);
-                               var arg2 = Expression.Parameter(tuple.Item3);
-                               var expr = Expression.MakeBinary(tuple.Item1, arg1, arg2);
-                               func = Expression.Lambda(Expression.GetFuncType(arg1.Type, arg2.Type, expr.Type), expr, arg1, arg2).Compile();
+                               var arg1 = Expression.Parameter(tuple.argType1);
+                               var arg2 = Expression.Parameter(tuple.argType2);
+                               var expr = Expression.MakeBinary(tuple.op, arg1, arg2);
+                               valueMakerDelegate = Expression.Lambda(Expression.GetFuncType(arg1.Type, arg2.Type, expr.Type), expr, arg1, arg2).Compile();
                            }
 
-                           return new Tuple<object, MethodInfo>(func, ReflectionHelper.GetOrAddMethodAny(func.GetType(), "Invoke"));
+                           return (valueMakerDelegate, ReflectionHelper.GetOrAddMethodAny(valueMakerDelegate.GetType(), "Invoke"));
                        });
 
                 var args = (op is ExpressionType.Convert or ExpressionType.ConvertChecked) ? new[] { left.Value } : new[] { left.Value, right.Value };
                 object? value;
                 try
                 {
-                    value = method.Item2.Invoke(method.Item1, args);
+                    value = method.method.Invoke(method.valueMakerDelegate, args);
                 }
                 catch (TargetInvocationException e)
                 {
@@ -263,7 +266,7 @@ namespace Pql.ExpressionEngine.Interfaces
                     throw e.InnerException;
                 }
 
-                return Expression.Constant(value, returnType ?? method.Item2.ReturnType);
+                return Expression.Constant(value, returnType ?? method.method.ReturnType);
             }
             catch (InvalidOperationException e)
             {
@@ -311,18 +314,18 @@ namespace Pql.ExpressionEngine.Interfaces
                 if (op is ExpressionType.Convert or ExpressionType.ConvertChecked)
                 {
                     var method = s_binaryOperators.GetOrAdd(
-                        new Tuple<ExpressionType, Type, Type>(op, left.Type, returnType), tuple =>
+                        new (op, left.Type, returnType), tuple =>
                             {
-                                var arg1 = Expression.Parameter(tuple.Item2);
-                                var expr = Expression.MakeUnary(tuple.Item1, arg1, tuple.Item3);
+                                var arg1 = Expression.Parameter(tuple.argType1);
+                                var expr = Expression.MakeUnary(tuple.op, arg1, tuple.argType2);
                                 var func = Expression.Lambda(Expression.GetFuncType(arg1.Type, expr.Type), expr, arg1).Compile();
-                                return new Tuple<object, MethodInfo>(func, ReflectionHelper.GetOrAddMethodAny(func.GetType(), "Invoke"));
+                                return (func, ReflectionHelper.GetOrAddMethodAny(func.GetType(), "Invoke"));
                             });
 
                     object? value;
                     try
                     {
-                        value = method.Item2.Invoke(method.Item1, new[] { left.Value });
+                        value = method.method.Invoke(method.valueMakerDelegate, new[] { left.Value });
                     }
                     catch (TargetInvocationException e)
                     {
@@ -339,18 +342,18 @@ namespace Pql.ExpressionEngine.Interfaces
                 else
                 {
                     var method = s_unaryOperators.GetOrAdd(
-                        new Tuple<ExpressionType, Type>(op, left.Type), tuple =>
+                        (op, left.Type), tuple =>
                             {
-                                var arg1 = Expression.Parameter(tuple.Item2);
-                                var expr = Expression.MakeUnary(tuple.Item1, arg1, null);
+                                var arg1 = Expression.Parameter(tuple.argType);
+                                var expr = Expression.MakeUnary(tuple.op, arg1, arg1.Type);
                                 var func = Expression.Lambda(Expression.GetFuncType(arg1.Type, expr.Type), expr, arg1).Compile();
-                                return new Tuple<object, MethodInfo>(func, ReflectionHelper.GetOrAddMethodAny(func.GetType(), "Invoke"));
+                                return (func, ReflectionHelper.GetOrAddMethodAny(func.GetType(), "Invoke"));
                             });
 
                     object? value;
                     try
                     {
-                        value = method.Item2.Invoke(method.Item1, new[] { left.Value });
+                        value = method.method.Invoke(method.valueMakerDelegate, new[] { left.Value });
                     }
                     catch (TargetInvocationException e)
                     {

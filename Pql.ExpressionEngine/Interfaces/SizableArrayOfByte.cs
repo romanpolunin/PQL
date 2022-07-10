@@ -75,6 +75,11 @@ namespace Pql.ExpressionEngine.Interfaces
                 return null;
             }
 
+            if (array.Data == null)
+            {
+                throw new Exception("Internal error: data array is not initialized");
+            }
+
             return Convert.ToBase64String(array.Data, 0, array.Length, Base64FormattingOptions.None);
         }
 
@@ -102,6 +107,16 @@ namespace Pql.ExpressionEngine.Interfaces
                 SetLength(src.Length);
                 if (Length > 0)
                 {
+                    if (src.Data == null)
+                    {
+                        throw new Exception("Internal error: data array is not initialized on source");
+                    }
+
+                    if (Data == null)
+                    {
+                        throw new Exception("Internal error: data array is not initialized on target");
+                    }
+
                     Buffer.BlockCopy(src.Data, 0, Data, 0, Length);
                 }
 
@@ -124,6 +139,11 @@ namespace Pql.ExpressionEngine.Interfaces
                 SetLength(src.Length);
                 if (Length > 0)
                 {
+                    if (Data == null)
+                    {
+                        throw new Exception("Internal error: data array is not initialized on target");
+                    }
+
                     Buffer.BlockCopy(src, 0, Data, 0, Length);
                 }
             }
@@ -139,6 +159,12 @@ namespace Pql.ExpressionEngine.Interfaces
 
             var index = Length;
             EnsureCapacity(index + 1);
+
+            if (Data == null)
+            {
+                throw new Exception("Internal error: data array is not initialized");
+            }
+
             Data[index] = item;
         }
 
@@ -163,6 +189,11 @@ namespace Pql.ExpressionEngine.Interfaces
             {
                 throw new ArgumentException(string.Format(
                     "Invalid combination of from ({0}) and count ({1}) values versus length ({2})", from, count, Length));
+            }
+
+            if (Data == null)
+            {
+                throw new Exception("Internal error: data array is not initialized");
             }
 
             Buffer.BlockCopy(Data, from + count, Data, from, count);
@@ -252,7 +283,7 @@ namespace Pql.ExpressionEngine.Interfaces
             /// </returns>
             /// <param name="x">The first object to compare.</param>
             /// <param name="y">The second object to compare.</param>
-            public bool Equals(SizableArrayOfByte x, SizableArrayOfByte y)
+            public bool Equals(SizableArrayOfByte? x, SizableArrayOfByte? y)
             {
                 if (ReferenceEquals(x, y))
                 {
@@ -271,6 +302,16 @@ namespace Pql.ExpressionEngine.Interfaces
 
                 for (var i = 0; i < x.Length; i++)
                 {
+                    if (x.Data == null)
+                    {
+                        throw new Exception("Internal error: data array is not initialized on x");
+                    }
+
+                    if (y.Data == null)
+                    {
+                        throw new Exception("Internal error: data array is not initialized on y");
+                    }
+
                     if (x.Data[i] != y.Data[i])
                     {
                         return false;
@@ -303,7 +344,7 @@ namespace Pql.ExpressionEngine.Interfaces
                 var len = obj.Length;
                 if (len > 0)
                 {
-                    var data = obj.Data;
+                    var data = obj.Data ?? throw new Exception("Internal error: data array is not initialized");
                     unchecked
                     {
                         const int p = 16777619;
@@ -341,7 +382,7 @@ namespace Pql.ExpressionEngine.Interfaces
             /// </returns>
             /// <param name="x">The first object to compare.</param>
             /// <param name="y">The second object to compare.</param>
-            public int Compare(SizableArrayOfByte x, SizableArrayOfByte y)
+            public int Compare(SizableArrayOfByte? x, SizableArrayOfByte? y)
             {
                 if (ReferenceEquals(x, y))
                 {
@@ -360,6 +401,16 @@ namespace Pql.ExpressionEngine.Interfaces
 
                 for (var i = 0; i < x.Length && i < y.Length; i++)
                 {
+                    if (x.Data == null)
+                    {
+                        throw new Exception("Internal error: data array is not initialized on x");
+                    }
+
+                    if (y.Data == null)
+                    {
+                        throw new Exception("Internal error: data array is not initialized on y");
+                    }
+
                     if (x.Data[i] < y.Data[i])
                     {
                         return -1;

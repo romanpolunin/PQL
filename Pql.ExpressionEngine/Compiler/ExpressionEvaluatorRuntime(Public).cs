@@ -99,7 +99,7 @@ namespace Pql.ExpressionEngine.Compiler
                 throw new ArgumentNullException(nameof(expression));
             }
 
-            return type != null ? ExpressionTreeExtensions.AdjustReturnType(null, expression, type) : expression;
+            return type == null ? expression : ExpressionTreeExtensions.AdjustReturnType(null, expression, type);
         }
 
         /// <summary>
@@ -107,14 +107,14 @@ namespace Pql.ExpressionEngine.Compiler
         /// May incur some waiting in highly concurrent environment, because the number of pooled parsers is limited.
         /// </summary>
         /// <param name="text">Expression text</param>
-        /// <param name="returnType">Desired return type - used for verification. Supply null to compile to Action</param>
+        /// <param name="desiredReturnType">Desired return type - used for verification. Supply null to compile to Action</param>
         /// <param name="args">Ordered name-type pairs of input arguments</param>
         /// <returns>Compiled lambda, some flavor of Func or Action</returns>
         /// <exception cref="ArgumentNullException"><paramref name="text"/> is null</exception>
         /// <exception cref="CompilationException">Compilation errors, check exception details</exception>
-        public object Compile(string text, Type returnType, params Tuple<string, Type>[] args)
+        public object Compile(string text, Type desiredReturnType, params (string name, Type type)[] args)
         {
-            return Compile(text, CancellationToken.None, returnType, args);
+            return Compile(text, desiredReturnType, CancellationToken.None, args);
         }
 
         /// <summary>
@@ -124,15 +124,15 @@ namespace Pql.ExpressionEngine.Compiler
         /// </summary>
         /// <param name="text">Expression text</param>
         /// <param name="cancellation">Cancellation token source to be used to abort waiting. Supply null to wait indefinitely.</param>
-        /// <param name="returnType">Desired return type - used for verification. Supply null to compile to Action</param>
+        /// <param name="desiredReturnType">Desired return type - used for verification. Supply null to compile to Action</param>
         /// <param name="args">Ordered name-type pairs of input arguments</param>
         /// <returns>Compiled lambda, some flavor of Func or Action</returns>
         /// <exception cref="ArgumentNullException"><paramref name="text"/> is null</exception>
         /// <exception cref="CompilationException">Compilation errors, check exception details</exception>
-        public object Compile(string text, CancellationToken cancellation, Type returnType, params Tuple<string, Type>[] args)
+        public object Compile(string text, Type desiredReturnType, CancellationToken cancellation, params (string name, Type type)[] args)
         {
             var tree = Parse(text, cancellation);
-            var state = new CompilerState(this, null, returnType, args);
+            var state = new CompilerState(this, null, desiredReturnType, args);
             var expression = Analyze(tree, state);
             return CompileImpl(expression, state);
         }

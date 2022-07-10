@@ -1008,7 +1008,13 @@ namespace Pql.ExpressionEngine.Interfaces
 
                 try
                 {
-                    result.Add((T)Convert.ChangeType(((ConstantExpression)item).Value, typeof(T)));
+                    var value = ((ConstantExpression)item).Value;
+                    if (value is null)
+                    {
+                        throw new CompilationException("Null value in set initializer", childNode);
+                    }
+
+                    result.Add((T)Convert.ChangeType(value, typeof(T)));
                 }
                 catch
                 {

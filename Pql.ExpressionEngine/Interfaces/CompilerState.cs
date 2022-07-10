@@ -42,7 +42,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <param name="contextType">Optional, type of the default @Context argument</param>
         /// <param name="desiredReturnType">Optional return type, supply <c>null</c> to compile to Action</param>
         /// <param name="args">Ordered list of types of arguments</param>
-        public CompilerState(IExpressionEvaluatorRuntime parentRuntime, Type? contextType, Type? desiredReturnType, params Tuple<string, Type>[] args)
+        public CompilerState(IExpressionEvaluatorRuntime parentRuntime, Type? contextType, Type? desiredReturnType, params (string name, Type type)[] args)
         {
             ParentRuntime = parentRuntime ?? throw new ArgumentNullException(nameof(parentRuntime));
             DesiredReturnType = desiredReturnType;
@@ -58,8 +58,8 @@ namespace Pql.ExpressionEngine.Interfaces
             {
                 for (var i = 0; i < args.Length; i++)
                 {
-                    var name = args[i].Item1;
-                    var type = args[i].Item2;
+                    var name = args[i].name;
+                    var type = args[i].type;
 
                     if (string.IsNullOrEmpty(name))
                     {

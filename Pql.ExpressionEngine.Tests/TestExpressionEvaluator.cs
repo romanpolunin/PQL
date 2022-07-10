@@ -132,20 +132,20 @@ namespace Pql.ExpressionEngine.UnitTest
 
             var date2 = new DateTime(2001, 10, 1, 12, 13, 14);
             var eval6 = (Func<int, int, int, int, int, int, DateTime>)_runtime.Compile("ToDateTime(@y,@m,@d,@hh,@mm,@ss)", typeof(DateTime),
-                new Tuple<string, Type>("@y", typeof(int)),
-                new Tuple<string, Type>("@m", typeof(int)),
-                new Tuple<string, Type>("@d", typeof(int)),
-                new Tuple<string, Type>("@hh", typeof(int)),
-                new Tuple<string, Type>("@mm", typeof(int)),
-                new Tuple<string, Type>("@ss", typeof(int))
+                ("@y", typeof(int)),
+                ("@m", typeof(int)),
+                ("@d", typeof(int)),
+                ("@hh", typeof(int)),
+                ("@mm", typeof(int)),
+                ("@ss", typeof(int))
                 );
             Assert.AreEqual(date2, eval6(date2.Year, date2.Month, date2.Day, date2.Hour, date2.Minute, date2.Second));
 
             var date2Dateonly = new DateTime(2001, 10, 1);
             var eval6DateOnly = (Func<int, int, int, DateTime>)_runtime.Compile("ToDateTime(@y,@m,@d)", typeof(DateTime),
-                new Tuple<string, Type>("@y", typeof(int)),
-                new Tuple<string, Type>("@m", typeof(int)),
-                new Tuple<string, Type>("@d", typeof(int))
+                ("@y", typeof(int)),
+                ("@m", typeof(int)),
+                ("@d", typeof(int))
                 );
             Assert.AreEqual(date2Dateonly, eval6DateOnly(date2.Year, date2.Month, date2.Day));
             Assert.AreEqual(0, eval6DateOnly(date2.Year, date2.Month, date2.Day).Hour);
@@ -156,20 +156,20 @@ namespace Pql.ExpressionEngine.UnitTest
 
             var date3 = new DateTime(2001, 10, 1, 12, 13, 14, 123);
             var eval6Withms = (Func<int, int, int, int, int, int, int, DateTime>)_runtime.Compile("ToDateTime(@y,@m,@d,@hh,@mm,@ss,@millis)", typeof(DateTime),
-                new Tuple<string, Type>("@y", typeof(int)),
-                new Tuple<string, Type>("@m", typeof(int)),
-                new Tuple<string, Type>("@d", typeof(int)),
-                new Tuple<string, Type>("@hh", typeof(int)),
-                new Tuple<string, Type>("@mm", typeof(int)),
-                new Tuple<string, Type>("@ss", typeof(int)),
-                new Tuple<string, Type>("@millis", typeof(int))
+                ("@y", typeof(int)),
+                ("@m", typeof(int)),
+                ("@d", typeof(int)),
+                ("@hh", typeof(int)),
+                ("@mm", typeof(int)),
+                ("@ss", typeof(int)),
+                ("@millis", typeof(int))
                 );
             Assert.AreEqual(date3, eval6Withms(date2.Year, date3.Month, date3.Day, date3.Hour, date3.Minute, date3.Second, date3.Millisecond));
 
             var eval7 = (Func<string, string, DateTime>)_runtime.Compile(
                 "ToDateTime(@value, @format)", typeof(DateTime),
-                new Tuple<string, Type>("@value", typeof(string)),
-                new Tuple<string, Type>("@format", typeof(string)));
+                ("@value", typeof(string)),
+                ("@format", typeof(string)));
             Assert.AreEqual(DateTime.ParseExact(valueString, formatString, null), eval7(valueString, formatString));
 
             var eval8 = (Func<DateTime>)_runtime.Compile(
@@ -281,9 +281,9 @@ namespace Pql.ExpressionEngine.UnitTest
             Assert.AreEqual(1.5, Eval<Double>("case when 1+2>3 then 4 else 1.5 end"));
             Assert.AreEqual(1.5, Eval<Double>("case when 1+2=3 then 1.5 else convert('4', 'double') end"));
 
-            Assert.AreEqual(3.0, _runtime.Compile<Double, Double>("case @context when 2.5,3  then 1.5 else 3 end")(1.5));
-            Assert.AreEqual(3.0, _runtime.Compile<Double, Double>("case @context when 4,   2.5 then 1.5 else 3   end")(3));
-            Assert.AreEqual(3.0, _runtime.Compile<Double, Double>("case @context when 2.5, 4   then 1.5 else 3   end")(3));
+            Assert.AreEqual(3.0, _runtime.Compile<Double, Double>("case @context when 2.5, 3   then 1.5 else 3 end")(1.5));
+            Assert.AreEqual(3.0, _runtime.Compile<Double, Double>("case @context when 4,   2.5 then 1.5 else 3 end")(3));
+            Assert.AreEqual(3.0, _runtime.Compile<Double, Double>("case @context when 2.5, 4   then 1.5 else 3 end")(3));
             Assert.AreEqual(1.5, _runtime.Compile<Double, Double>("case @context when 4,   2.5 then cast(3, 'single') else 1.5 end")(3));
             Assert.AreEqual(1.5, _runtime.Compile<Double, Double>("case @context when 2.5, 4   then cast(3, 'double') else 1.5 end")(3));
 
@@ -299,18 +299,18 @@ namespace Pql.ExpressionEngine.UnitTest
             Assert.IsTrue(Eval<bool, bool>("case case WHEN @context THEN 1.5 ELSE 0 end WHEN 1.5 THEN true ELSE false END", true));
 
             var eval4 = (Func<Single, bool>)_runtime.Compile("case @arg1 WHEN -1 then false WHEN cast(1+0.5,'Single') then true ELSE false END",
-                typeof(Boolean), new Tuple<string, Type>("@arg1", typeof(Single)));
+                typeof(Boolean), ("@arg1", typeof(Single)));
             Assert.IsTrue(eval4(1.5f));
             Assert.IsFalse(eval4(1.4f));
 
             eval4 = (Func<Single, bool>)_runtime.Compile("case @arg_1 WHEN -1 then true WHEN cast(1+0.5,'Single') then true END",
-                typeof(Boolean), new Tuple<string, Type>("@arg_1", typeof(Single)));
+                typeof(Boolean), ("@arg_1", typeof(Single)));
             Assert.IsTrue(eval4(1.5f));
             Assert.IsFalse(eval4(1.4f));
             Assert.IsTrue(eval4(-1f));
 
             eval4 = (Func<Single, bool>)_runtime.Compile("case case (@_arg1) WHEN -1 then true WHEN (cast(1+0.5,'Single')) THEN true END WHEN true THEN false ELSE true end",
-                typeof(Boolean), new Tuple<string, Type>("@_arg1", typeof(Single)));
+                typeof(Boolean), ("@_arg1", typeof(Single)));
             Assert.IsFalse(eval4(1.5f));
             Assert.IsTrue(eval4(1.4f));
             Assert.IsFalse(eval4(-1f));
@@ -423,8 +423,8 @@ namespace Pql.ExpressionEngine.UnitTest
 
             var eval = (Func<string, string, bool>)_runtime.Compile(
                 "CustomEndsWith(@arg1, @arg2)", typeof(bool),
-                new Tuple<string, Type>("@arg1", typeof(string)),
-                new Tuple<string, Type>("@arg2", typeof(string)));
+                ("@arg1", typeof(string)),
+                ("@arg2", typeof(string)));
 
             Assert.IsTrue(eval("abcde", "de"));
             Assert.IsFalse(eval("abcde", "ee"));
@@ -505,8 +505,8 @@ namespace Pql.ExpressionEngine.UnitTest
 
             var eval = (Func<string, string, bool>)_runtime.Compile(
                 "Custom_EndsWith(@arg1, @arg2)", typeof(bool),
-                new Tuple<string, Type>("@arg1", typeof(string)),
-                new Tuple<string, Type>("@arg2", typeof(string)));
+                ("@arg1", typeof(string)),
+                ("@arg2", typeof(string)));
 
             Assert.IsTrue(eval("abcde", "de"));
             Assert.IsFalse(eval("abcde", "ee"));
@@ -555,16 +555,16 @@ namespace Pql.ExpressionEngine.UnitTest
             var add = (Func<long, long, long>)
                 _runtime.Compile("@Arg1 + @Arg2",
                 typeof(long),
-                new Tuple<string, Type>("@arg1", typeof(long)),
-                new Tuple<string, Type>("@arg2", typeof(long)));
+                ("@arg1", typeof(long)),
+                ("@arg2", typeof(long)));
 
             Assert.AreEqual(1L + 2L, add(1L, 2L));
 
             var addWithConvert = (Func<long, string?, long>)
                 _runtime.Compile("@Arg1 + CONVERT(@Arg2, 'Int64')",
                 typeof(long),
-                new Tuple<string, Type>("@arg1", typeof(long)),
-                new Tuple<string, Type>("@arg2", typeof(string)));
+                ("@arg1", typeof(long)),
+                ("@arg2", typeof(string)));
 
             Assert.AreEqual(1L + 0L, addWithConvert(1L, ""));
             Assert.AreEqual(1L + 0L, addWithConvert(1L, null));
@@ -573,8 +573,8 @@ namespace Pql.ExpressionEngine.UnitTest
             var concat = (Func<string, long, string>)
                 _runtime.Compile("@Arg1 + Convert(@Arg2, 'string')",
                 typeof(string),
-                new Tuple<string, Type>("@arg1", typeof(string)),
-                new Tuple<string, Type>("@arg2", typeof(long)));
+                ("@arg1", typeof(string)),
+                ("@arg2", typeof(long)));
 
             Assert.AreEqual("1" + 2L, concat("1", 2L));
         }
@@ -659,7 +659,7 @@ namespace Pql.ExpressionEngine.UnitTest
 
             var eval4 = (Func<UnboxableNullable<int>, int>)_runtime.Compile(
                 "5 + CASE @arg when 1 then NULL else 25 END",
-                typeof(int), new Tuple<string, Type>("@arg", typeof(UnboxableNullable<int>)));
+                typeof(int), ("@arg", typeof(UnboxableNullable<int>)));
 
             Assert.AreEqual(5, eval4(1));
             Assert.AreEqual(30, eval4(-2));
@@ -667,35 +667,35 @@ namespace Pql.ExpressionEngine.UnitTest
 
             eval4 = (Func<UnboxableNullable<int>, int>)_runtime.Compile(
                 "CASE WHEN IsNull(@arg) then 1 else 2 END",
-                typeof(int), new Tuple<string, Type>("@arg", typeof(UnboxableNullable<int>)));
+                typeof(int), ("@arg", typeof(UnboxableNullable<int>)));
 
             Assert.AreEqual(2, eval4(1));
             Assert.AreEqual(1, eval4(0.Null()));
 
             eval4 = (Func<UnboxableNullable<int>, int>)_runtime.Compile(
                 "CASE WHEN @arg iS NuLl then 1 else 2 END",
-                typeof(int), new Tuple<string, Type>("@arg", typeof(UnboxableNullable<int>)));
+                typeof(int), ("@arg", typeof(UnboxableNullable<int>)));
 
             Assert.AreEqual(2, eval4(1));
             Assert.AreEqual(1, eval4(0.Null()));
 
             eval4 = (Func<UnboxableNullable<int>, int>)_runtime.Compile(
                 "CASE WHEN @arg between 0 and 0 then 1 else 2 END",
-                typeof(int), new Tuple<string, Type>("@arg", typeof(UnboxableNullable<int>)));
+                typeof(int), ("@arg", typeof(UnboxableNullable<int>)));
 
             Assert.AreEqual(2, eval4(1));
             Assert.AreEqual(1, eval4(0.Null()));
 
             eval4 = (Func<UnboxableNullable<int>, int>)_runtime.Compile(
                 "CASE @arg WHEN NULL then 1 else 2 END",
-                typeof(int), new Tuple<string, Type>("@arg", typeof(UnboxableNullable<int>)));
+                typeof(int), ("@arg", typeof(UnboxableNullable<int>)));
 
             Assert.AreEqual(2, eval4(1));
             Assert.AreEqual(1, eval4(0.Null()));
 
             var eval5 = (Func<string?, int>)_runtime.Compile(
                 "CASE @arg WHEN NULL then 1 else 2 END",
-                typeof(int), new Tuple<string, Type>("@arg", typeof(string)));
+                typeof(int), ("@arg", typeof(string)));
 
             Assert.AreEqual(2, eval5("test"));
             Assert.AreEqual(2, eval5(string.Empty));
@@ -790,30 +790,30 @@ namespace Pql.ExpressionEngine.UnitTest
             Assert.AreEqual(2, ((Func<int, UnboxableNullable<int>, UnboxableNullable<int>>)_runtime.Compile(
                 "coalesce(@val1, @val2)",
                 typeof(UnboxableNullable<int>),
-                new Tuple<string, Type>("@val1", typeof(int)),
-                new Tuple<string, Type>("@val2", typeof(UnboxableNullable<int>))
+                ("@val1", typeof(int)),
+                ("@val2", typeof(UnboxableNullable<int>))
                 ))(0, 2));
 
             Assert.AreEqual(1, ((Func<UnboxableNullable<int>, UnboxableNullable<int>, UnboxableNullable<int>>)_runtime.Compile(
                 "coalesce(@val1, @val2)",
                 typeof(UnboxableNullable<int>),
-                new Tuple<string, Type>("@val1", typeof(UnboxableNullable<int>)),
-                new Tuple<string, Type>("@val2", typeof(UnboxableNullable<int>))
+                ("@val1", typeof(UnboxableNullable<int>)),
+                ("@val2", typeof(UnboxableNullable<int>))
                 ))(1, 2));
 
             Assert.AreEqual(2, ((Func<UnboxableNullable<int>, UnboxableNullable<int>, UnboxableNullable<int>>)
                 _runtime.Compile("coalesce(@val1, @val2)",
                 typeof(UnboxableNullable<int>),
-                new Tuple<string, Type>("@val1", typeof(UnboxableNullable<int>)),
-                new Tuple<string, Type>("@val2", typeof(UnboxableNullable<int>))
+                ("@val1", typeof(UnboxableNullable<int>)),
+                ("@val2", typeof(UnboxableNullable<int>))
                 ))(0.Null(), 2));
 
             Assert.AreEqual(3, ((Func<UnboxableNullable<int>, UnboxableNullable<int>, int, int>)
                 _runtime.Compile("coalesce(@val1, @val2, @val3)",
                 typeof(int),
-                new Tuple<string, Type>("@val1", typeof(UnboxableNullable<int>)),
-                new Tuple<string, Type>("@val2", typeof(UnboxableNullable<int>)),
-                new Tuple<string, Type>("@val3", typeof(int))
+                ("@val1", typeof(UnboxableNullable<int>)),
+                ("@val2", typeof(UnboxableNullable<int>)),
+                ("@val3", typeof(int))
                 ))(0.Null(), 0.Null(), 3));
 
             Assert.AreEqual("2", Eval<string, string>("coalesce(@context, Default('string'), '2')", ""));
@@ -1057,18 +1057,18 @@ namespace Pql.ExpressionEngine.UnitTest
             Assert.IsTrue(((Func<bool>)_runtime.Compile("NOT false", typeof(bool)))());
 
             var eval4 = (Func<Single, bool>)_runtime.Compile("@arg1 = cast(1+0.5, 'int32')",
-                typeof(Boolean), new Tuple<string, Type>("@arg1", typeof(Single)));
+                typeof(Boolean), ("@arg1", typeof(Single)));
             Assert.IsFalse(eval4(1.5f));
             Assert.IsFalse(eval4(1.4f));
             Assert.IsTrue(eval4(1f));
 
             var eval5 = (Func<string, int>)_runtime.Compile("cast(convert(@var, 'Double') * 2, 'int32')", typeof(int),
-                new Tuple<string, Type>("@var", typeof(string)));
+                ("@var", typeof(string)));
             Assert.AreEqual(8, eval5("4"));
             Assert.AreEqual(8, eval5("4.1"));
 
             var eval6 = (Func<int, string>)_runtime.Compile("convert(@var*2, 'string') + 'xyz'", typeof(string),
-                new Tuple<string, Type>("@var", typeof(int)));
+                ("@var", typeof(int)));
             Assert.AreEqual("10xyz", eval6(5));
 
             var eval7 = _runtime.Compile<int, bool>("@Context = 1");
@@ -1077,7 +1077,7 @@ namespace Pql.ExpressionEngine.UnitTest
 
             var testData = new TestData { Int64Field1 = 25 };
             var eval8 = (Func<TestData, int, bool>)_runtime.Compile("Int64Field1 = @arg", typeof(bool),
-                new Tuple<string, Type>("@Context", typeof(TestData)), new Tuple<string, Type>("@arg", typeof(Int32)));
+                ("@Context", typeof(TestData)), ("@arg", typeof(Int32)));
             Assert.IsTrue(eval8(testData, 25));
             Assert.IsFalse(eval8(testData, 26));
         }
@@ -1116,8 +1116,8 @@ namespace Pql.ExpressionEngine.UnitTest
         {
             var stringeval = (Func<HashSet<string>, string, bool>)_runtime.Compile(
                 "SetContains(@set, @arg)", typeof(bool),
-                new Tuple<string, Type>("@set", typeof(HashSet<string>)),
-                new Tuple<string, Type>("@arg", typeof(string)));
+                ("@set", typeof(HashSet<string>)),
+                ("@arg", typeof(string)));
 
             var stringset = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "aa", "bb", "cc" };
             Assert.IsTrue(stringeval(stringset, "aa"));
@@ -1130,8 +1130,8 @@ namespace Pql.ExpressionEngine.UnitTest
 
             var intseteval = (Func<HashSet<int>, int, bool>)_runtime.Compile(
                 "SetContains(@set, @arg)", typeof(bool),
-                new Tuple<string, Type>("@set", typeof(HashSet<int>)),
-                new Tuple<string, Type>("@arg", typeof(int)));
+                ("@set", typeof(HashSet<int>)),
+                ("@arg", typeof(int)));
 
             var intset = new HashSet<int> { 1, 2, 3 };
             Assert.IsTrue(intseteval(intset, 1));
@@ -1139,8 +1139,8 @@ namespace Pql.ExpressionEngine.UnitTest
 
             var intsetneval = (Func<HashSet<UnboxableNullable<int>>, int, bool>)_runtime.Compile(
                 "SetContains(@set, @arg)", typeof(bool),
-                new Tuple<string, Type>("@set", typeof(HashSet<UnboxableNullable<int>>)),
-                new Tuple<string, Type>("@arg", typeof(int)));
+                ("@set", typeof(HashSet<UnboxableNullable<int>>)),
+                ("@arg", typeof(int)));
 
             var intsetn = new HashSet<UnboxableNullable<int>> { 1, 2, 3, 0.Null() };
             Assert.IsTrue(intsetneval(intsetn, 1));
@@ -1148,8 +1148,8 @@ namespace Pql.ExpressionEngine.UnitTest
 
             var intsetnneval = (Func<HashSet<UnboxableNullable<int>>, UnboxableNullable<int>, bool>)_runtime.Compile(
                 "SetContains(@set, @arg)", typeof(bool),
-                new Tuple<string, Type>("@set", typeof(HashSet<UnboxableNullable<int>>)),
-                new Tuple<string, Type>("@arg", typeof(UnboxableNullable<int>)));
+                ("@set", typeof(HashSet<UnboxableNullable<int>>)),
+                ("@arg", typeof(UnboxableNullable<int>)));
 
             var intsetnn = new HashSet<UnboxableNullable<int>> { 1, 2, 3 };
             Assert.IsTrue(intsetnneval(intsetnn, 1));
@@ -1161,8 +1161,8 @@ namespace Pql.ExpressionEngine.UnitTest
 
             var intsetnnevalsbyte = (Func<HashSet<UnboxableNullable<int>>, UnboxableNullable<SByte>, bool>)_runtime.Compile(
                 "SetContains(@set, @arg)", typeof(bool),
-                new Tuple<string, Type>("@set", typeof(HashSet<UnboxableNullable<int>>)),
-                new Tuple<string, Type>("@arg", typeof(UnboxableNullable<SByte>)));
+                ("@set", typeof(HashSet<UnboxableNullable<int>>)),
+                ("@arg", typeof(UnboxableNullable<SByte>)));
 
             Assert.IsTrue(intsetnnevalsbyte(intsetnn, 1));
             Assert.IsFalse(intsetnnevalsbyte(intsetnn, (-1)));

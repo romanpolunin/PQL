@@ -267,14 +267,14 @@ namespace Pql.ExpressionEngine.Compiler
             if (ReferenceEquals(value.Type, typeof(Double)))
             {
                 return constExpr != null
-                           ? Expression.Constant(Double.IsNaN((Double)constExpr.Value))
+                           ? Expression.Constant(Double.IsNaN((Double)(constExpr.Value ?? 0.0)))
                            : Expression.Call(ReflectionHelper.DoubleIsNaN, value);
             }
 
             if (ReferenceEquals(value.Type, typeof(Single)))
             {
                 return constExpr != null
-                           ? Expression.Constant(Single.IsNaN((Single)constExpr.Value))
+                           ? Expression.Constant(Single.IsNaN((Single)(constExpr.Value ?? 0f)))
                            : Expression.Call(ReflectionHelper.SingleIsNaN, value);
             }
 
@@ -294,14 +294,14 @@ namespace Pql.ExpressionEngine.Compiler
             if (ReferenceEquals(value.Type, typeof(Double)))
             {
                 return constExpr != null
-                           ? Expression.Constant(Double.IsInfinity((Double)constExpr.Value))
+                           ? Expression.Constant(Double.IsInfinity((Double)(constExpr.Value ?? 0.0)))
                            : Expression.Call(ReflectionHelper.DoubleIsInfinity, value);
             }
 
             if (ReferenceEquals(value.Type, typeof(Single)))
             {
                 return constExpr != null
-                           ? Expression.Constant(Single.IsInfinity((Single)constExpr.Value))
+                           ? Expression.Constant(Single.IsInfinity((Single)(constExpr.Value ?? 0f)))
                            : Expression.Call(ReflectionHelper.SingleIsInfinity, value);
             }
 
@@ -396,7 +396,9 @@ namespace Pql.ExpressionEngine.Compiler
                 // or maybe they are asking to convert Base64 string into binary value?
                 if (targetType.IsBinary())
                 {
-                    return ConstantHelper.TryEvalConst(root, targetType.GetConstructor(new[] { typeof(string) }), value);
+                    var ctr = targetType.GetConstructor(new[] { typeof(string) })
+                        ?? throw new CompilationException("Could not find a constructor that takes string as argument, on type " + targetType.FullName);
+                    return ConstantHelper.TryEvalConst(root, ctr, value);
                 }
 
                 // maybe we can parse string to a number?

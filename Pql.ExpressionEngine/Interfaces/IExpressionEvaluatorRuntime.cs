@@ -85,7 +85,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <returns>Compiled lambda, some flavor of Func or Action</returns>
         /// <exception cref="ArgumentNullException"><paramref name="text"/> is null</exception>
         /// <exception cref="CompilationException">Some errors in the compilation</exception>
-        object Compile(string text, Type returnType, params Tuple<string, Type>[] args);
+        object Compile(string text, Type returnType, params (string name, Type type)[] args);
 
         /// <summary>
         /// Parses, analyzes and compiles given expression string into a CLR lambda of appropriate type (some flavor of Func or Action).
@@ -99,7 +99,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <returns>Compiled lambda, some flavor of Func or Action</returns>
         /// <exception cref="ArgumentNullException"><paramref name="text"/> is null</exception>
         /// <exception cref="CompilationException">Some errors in the compilation</exception>
-        object Compile(string text, CancellationToken cancellation, Type returnType, params Tuple<string, Type>[] args);
+        object Compile(string text, Type returnType, CancellationToken cancellation, params (string name, Type type)[] args);
 
         /// <summary>
         /// Parses, analyzes and compiles given expression string into a CLR lambda of appropriate type (some flavor of Func or Action).

@@ -521,19 +521,14 @@ namespace Pql.ExpressionEngine.Compiler
                 }
             }
 
-            if (caseDefault == null)
-            {
-                caseDefault = PredefinedAtom_VoidNull(whenThenListNode, state);
-            }
+            var tail = caseDefault ?? PredefinedAtom_VoidNull(whenThenListNode, state);
 
-            if (mustReturnNullable && !caseDefault.IsNullableType())
+            if (mustReturnNullable && !tail.IsNullableType())
             {
-                caseDefault = ExpressionTreeExtensions.MakeNewNullable(
-                        typeof(UnboxableNullable<>).MakeGenericType(caseDefault.Type),
-                        caseDefault);
+                tail = ExpressionTreeExtensions.MakeNewNullable(
+                        typeof(UnboxableNullable<>).MakeGenericType(tail.Type),
+                        tail);
             }
-
-            var tail = caseDefault;
 
             // now adjust return types for all then
             for (var i = cases.Count - 1; i >= 0; i--)
@@ -576,11 +571,16 @@ namespace Pql.ExpressionEngine.Compiler
                 }
                 else
                 {
+                    if (tail is null)
+                    {
+                        throw new CompilationException("Could not determine result expression for tail at ", item.thenNode);
+                    }
+
                     tail = Expression.Condition(item.when, item.then, tail);
                 }
             }
 
-            return tail 
+            return tail
                 ?? throw new CompilationException("Could not determine result expression for CASE", whenThenListNode);
         }
 
