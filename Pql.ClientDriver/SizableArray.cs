@@ -1,6 +1,4 @@
-using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace Pql.ClientDriver
 {
@@ -15,19 +13,18 @@ namespace Pql.ClientDriver
         /// Array of elements. May contain more elements than actually used.
         /// </summary>
         /// <see cref="Length"/>
-        public T[] Data;
-        
+        public T[]? Data;
+
         /// <summary>
         /// Number of valid elements inside <see cref="Data"/>.
         /// </summary>
         public int Length;
-        
+
         /// <summary>
         /// Capacity of the <see cref="Data"/> array or zero if it is null.
         /// </summary>
         public int Capacity
         {
-            
             get
             {
                 AssertState();
@@ -41,7 +38,7 @@ namespace Pql.ClientDriver
         /// </summary>
         public SizableArray()
         {
-            
+
         }
 
         /// <summary>
@@ -57,7 +54,7 @@ namespace Pql.ClientDriver
         /// Ctr.
         /// </summary>
         /// <param name="data">The buffer to take as initial storage</param>
-        public SizableArray(T[] data)
+        public SizableArray(T[]? data)
         {
             Data = data;
             Length = data == null ? 0 : data.Length;
@@ -66,7 +63,6 @@ namespace Pql.ClientDriver
         /// <summary>
         /// Reallocates <see cref="Data"/> if needed to accomodate <paramref name="capacity"/> number of elements.
         /// </summary>
-        
         public void EnsureCapacity(int capacity)
         {
             AssertState();
@@ -85,8 +81,7 @@ namespace Pql.ClientDriver
         /// <summary>
         /// Reallocates <see cref="Data"/> if needed to accomodate <paramref name="length"/> number of elements.
         /// Updates value of <see cref="Length"/> too.
-        /// </summary>
-        
+        /// </summary>        
         public void SetLength(int length)
         {
             EnsureCapacity(length);

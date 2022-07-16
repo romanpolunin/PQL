@@ -5,12 +5,10 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Grpc.Net.Client.Configuration;
 
-using Pql.ClientDriver.Protocol;
-using Pql.ClientDriver.Protocol.Wire;
-
 using PqlCall = Grpc.Core.AsyncDuplexStreamingCall<
             Pql.ClientDriver.Protocol.Wire.PqlRequestItem,
             Pql.ClientDriver.Protocol.Wire.PqlResponseItem>;
+
 
 namespace Pql.ClientDriver
 {
@@ -26,6 +24,8 @@ namespace Pql.ClientDriver
         private ConnectionState _connectionState;
         private PqlDataCommand _activeCommand;
         private CancellationTokenSource _cancellationTokenSource;
+
+        public static Protocol.Wire.PqlService.PqlServiceClient CreateClient(GrpcChannel channel) => new (channel);
 
         /// <summary>
         /// Ctr.
@@ -43,7 +43,7 @@ namespace Pql.ClientDriver
         /// A string containing connection settings.
         /// </returns>
         /// <filterpriority>2</filterpriority>
-        public override string ConnectionString
+        public override string? ConnectionString
         {
             get => _connectionProps.RawString;
             set => _connectionProps = new ConnectionProps(value);
@@ -168,7 +168,7 @@ namespace Pql.ClientDriver
 
                 _channel.ConnectAsync().GetAwaiter().GetResult();
 
-                _serviceClient = new PqlService.PqlServiceClient(_channel);
+                _serviceClient = new Protocol.Wire.PqlService.PqlServiceClient(_channel);
 
                 /*if (_connectionProps.ConnectionTimeoutSeconds == -1)
                 {

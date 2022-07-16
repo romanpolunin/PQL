@@ -110,93 +110,64 @@ namespace Pql.ClientDriver
         /// Returns index of the field in a typed array.
         /// </summary>
         /// <param name="indexInResponse">Index of the field in the response, irrespective of its data type. Also known as Ordinal: <see cref="DataResponseField.Ordinal"/></param>
-
-        public int GetIndexInArray(int indexInResponse)
-        {
-            return FieldArrayIndexes[indexInResponse];
-        }
+        public int GetIndexInArray(int indexInResponse) => FieldArrayIndexes[indexInResponse];
 
         /// <summary>
         /// Returns integral value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public Int64 GetInt64(int indexInResponse)
-        {
-            return BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsInt64 : 0;
-        }
+        public Int64 GetInt64(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsInt64 : 0;
 
         /// <summary>
         /// Returns integral value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public Int32 GetInt32(int indexInResponse)
-        {
-            return BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsInt32 : 0;
-        }
+        public Int32 GetInt32(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsInt32 : 0;
 
         /// <summary>
         /// Returns integral value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public Int16 GetInt16(int indexInResponse)
-        {
-            return BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsInt16 : (Int16)0;
-        }
+        public Int16 GetInt16(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsInt16 : (Int16)0;
 
         /// <summary>
         /// Returns integral value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public Byte GetByte(int indexInResponse)
-        {
-            return BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsByte : (Byte)0;
-        }
+        public Byte GetByte(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsByte : (Byte)0;
 
         /// <summary>
         /// Returns integral value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public bool GetBoolean(int indexInResponse)
-        {
-            return BitVector.Get(NotNulls, indexInResponse) && ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsBoolean;
-        }
+        public bool GetBoolean(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) && ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsBoolean;
 
         /// <summary>
         /// Returns datetime value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public DateTime GetDateTime(int indexInResponse)
-        {
-            return BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsDateTime : new DateTime();
-        }
+        public DateTime GetDateTime(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsDateTime : new DateTime();
 
         /// <summary>
         /// Returns datetime value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public DateTimeOffset GetDateTimeOffset(int indexInResponse)
-        {
-            return BitVector.Get(NotNulls, indexInResponse) ? ValueData16Bytes[FieldArrayIndexes[indexInResponse]].AsDateTimeOffset : new DateTimeOffset();
-        }
+        public DateTimeOffset GetDateTimeOffset(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData16Bytes[FieldArrayIndexes[indexInResponse]].AsDateTimeOffset : new DateTimeOffset();
 
         /// <summary>
         /// Returns string value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public string GetString(int indexInResponse)
+        public string? GetString(int indexInResponse)
         {
             if (BitVector.Get(NotNulls, indexInResponse))
             {
                 var data = StringData[FieldArrayIndexes[indexInResponse]];
-                return data.Data == null ? null : data.Data.Length == 0 ? string.Empty : new string(data.Data, 0, data.Length);
+                return data.Data == null 
+                    ? null 
+                    : data.Data.Length == 0 
+                    ? string.Empty 
+                    : new string(data.Data, 0, data.Length);
             }
 
             return null;
@@ -207,7 +178,6 @@ namespace Pql.ClientDriver
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
         /// <exception cref="DataException">String data must have exactly one character</exception>
-
         public char GetChar(int indexInResponse)
         {
             if (BitVector.Get(NotNulls, indexInResponse))
@@ -221,7 +191,7 @@ namespace Pql.ClientDriver
                 return data.Data[0];
             }
 
-            return (char)0;
+            return '\0';
         }
 
         /// <summary>
@@ -236,20 +206,19 @@ namespace Pql.ClientDriver
         /// <param name="length">The number of bytes to read. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
         /// <filterpriority>2</filterpriority>
-
-        public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
+        public long GetChars(int i, long fieldoffset, char[]? buffer, int bufferoffset, int length)
         {
             if (buffer == null)
             {
-                throw new ArgumentNullException(nameof(buffer));
+                return 0;
             }
 
-            if (fieldoffset > int.MaxValue || fieldoffset < 0)
+            if (fieldoffset is > int.MaxValue or < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(fieldoffset));
             }
 
-            if (bufferoffset > int.MaxValue || bufferoffset < 0)
+            if (bufferoffset is > int.MaxValue or < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(bufferoffset));
             }
@@ -277,48 +246,31 @@ namespace Pql.ClientDriver
         /// Returns floating point value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public double GetDouble(int indexInResponse)
-        {
-            return BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsDouble : 0;
-        }
+        public double GetDouble(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsDouble : 0;
 
         /// <summary>
         /// Returns floating point value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public Single GetSingle(int indexInResponse)
-        {
-            return BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsSingle : 0;
-        }
+        public Single GetSingle(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsSingle : 0;
 
         /// <summary>
         /// Returns floating point value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public float GetFloat(int indexInResponse)
-        {
-            return BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsSingle : 0;
-        }
+        public float GetFloat(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsSingle : 0;
 
         /// <summary>
         /// Returns guid value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public Guid GetGuid(int indexInResponse)
-        {
-            return BitVector.Get(NotNulls, indexInResponse) ? ValueData16Bytes[FieldArrayIndexes[indexInResponse]].AsGuid : Guid.Empty;
-        }
+        public Guid GetGuid(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData16Bytes[FieldArrayIndexes[indexInResponse]].AsGuid : Guid.Empty;
 
         /// <summary>
         /// Returns binary value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public byte[] GetBinary(int indexInResponse)
+        public byte[]? GetBinary(int indexInResponse)
         {
             if (BitVector.Get(NotNulls, indexInResponse))
             {
@@ -350,20 +302,19 @@ namespace Pql.ClientDriver
         /// <param name="length">The number of bytes to read. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
         /// <filterpriority>2</filterpriority>
-
-        public int GetBinary(int i, long fieldoffset, byte[] buffer, int bufferoffset, int length)
+        public int GetBinary(int i, long fieldoffset, byte[]? buffer, int bufferoffset, int length)
         {
             if (buffer == null)
             {
-                throw new ArgumentNullException(nameof(buffer));
+                return 0;
             }
 
-            if (fieldoffset > int.MaxValue || fieldoffset < 0)
+            if (fieldoffset is > int.MaxValue or < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(fieldoffset), fieldoffset, "Invalid offset");
             }
 
-            if (bufferoffset > int.MaxValue || bufferoffset < 0)
+            if (bufferoffset is > int.MaxValue or < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(bufferoffset), bufferoffset, "Invalid offset");
             }
@@ -391,11 +342,8 @@ namespace Pql.ClientDriver
         /// Returns decimal value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-
-        public decimal GetCurrency(int indexInResponse)
-        {
-            return BitVector.Get(NotNulls, indexInResponse) ? ValueData16Bytes[FieldArrayIndexes[indexInResponse]].AsDecimal : 0;
-        }
+        public decimal GetCurrency(int indexInResponse) => 
+            BitVector.Get(NotNulls, indexInResponse) ? ValueData16Bytes[FieldArrayIndexes[indexInResponse]].AsDecimal : 0;
 
         /// <summary>
         /// Returns object-boxed value for the give field's ordinal, or null object if it is marked as null in response.
@@ -405,61 +353,34 @@ namespace Pql.ClientDriver
         {
             if (!BitVector.Get(NotNulls, indexInResponse))
             {
-                return null;
+                return DBNull.Value;
             }
 
             var indexInArray = FieldArrayIndexes[indexInResponse];
-            switch (FieldTypes[indexInResponse])
+            object? result = FieldTypes[indexInResponse] switch
             {
-                //case DbType.VarNumeric:
-                //    break;
-                case DbType.Object:
-                case DbType.Binary:
-                    return GetBinary(indexInResponse);
-                case DbType.SByte:
-                    return ValueData8Bytes[indexInArray].AsSByte;
-                case DbType.Byte:
-                    return ValueData8Bytes[indexInArray].AsByte;
-                case DbType.Boolean:
-                    return ValueData8Bytes[indexInArray].AsBoolean;
-                case DbType.Decimal:
-                case DbType.Currency:
-                    return ValueData16Bytes[indexInArray].AsDecimal;
-                case DbType.Double:
-                    return ValueData8Bytes[indexInArray].AsDouble;
-                case DbType.Guid:
-                    return GetGuid(indexInResponse);
-                case DbType.Int16:
-                    return ValueData8Bytes[indexInArray].AsInt16;
-                case DbType.UInt16:
-                    return ValueData8Bytes[indexInArray].AsUInt16;
-                case DbType.Int32:
-                    return ValueData8Bytes[indexInArray].AsInt32;
-                case DbType.UInt32:
-                    return ValueData8Bytes[indexInArray].AsUInt32;
-                case DbType.Date:
-                case DbType.DateTime:
-                case DbType.DateTime2:
-                    return ValueData8Bytes[indexInArray].AsDateTime;
-                case DbType.Time:
-                    return ValueData8Bytes[indexInArray].AsTimeSpan;
-                case DbType.DateTimeOffset:
-                    return ValueData16Bytes[indexInArray].AsDateTimeOffset;
-                case DbType.Int64:
-                    return ValueData8Bytes[indexInArray].AsInt64;
-                case DbType.UInt64:
-                    return ValueData8Bytes[indexInArray].AsUInt64;
-                case DbType.Single:
-                    return ValueData8Bytes[indexInArray].AsSingle;
-                case DbType.String:
-                case DbType.AnsiString:
-                case DbType.AnsiStringFixedLength:
-                case DbType.StringFixedLength:
-                case DbType.Xml:
-                    return GetString(indexInResponse);
-                default:
-                    throw new DataException("Invalid DbType: " + FieldTypes[indexInResponse]);
-            }
+                DbType.Object or DbType.Binary => GetBinary(indexInResponse),
+                DbType.SByte => ValueData8Bytes[indexInArray].AsSByte,
+                DbType.Byte => ValueData8Bytes[indexInArray].AsByte,
+                DbType.Boolean => ValueData8Bytes[indexInArray].AsBoolean,
+                DbType.Decimal or DbType.Currency => ValueData16Bytes[indexInArray].AsDecimal,
+                DbType.Double => ValueData8Bytes[indexInArray].AsDouble,
+                DbType.Guid => GetGuid(indexInResponse),
+                DbType.Int16 => ValueData8Bytes[indexInArray].AsInt16,
+                DbType.UInt16 => ValueData8Bytes[indexInArray].AsUInt16,
+                DbType.Int32 => ValueData8Bytes[indexInArray].AsInt32,
+                DbType.UInt32 => ValueData8Bytes[indexInArray].AsUInt32,
+                DbType.Date or DbType.DateTime or DbType.DateTime2 => ValueData8Bytes[indexInArray].AsDateTime,
+                DbType.Time => ValueData8Bytes[indexInArray].AsTimeSpan,
+                DbType.DateTimeOffset => ValueData16Bytes[indexInArray].AsDateTimeOffset,
+                DbType.Int64 => ValueData8Bytes[indexInArray].AsInt64,
+                DbType.UInt64 => ValueData8Bytes[indexInArray].AsUInt64,
+                DbType.Single => ValueData8Bytes[indexInArray].AsSingle,
+                DbType.String or DbType.AnsiString or DbType.AnsiStringFixedLength or DbType.StringFixedLength or DbType.Xml => GetString(indexInResponse),
+                _ => throw new DataException("Invalid DbType: " + FieldTypes[indexInResponse]),
+            };
+
+            return result ?? DBNull.Value;
         }
 
         /// <summary>
@@ -477,7 +398,7 @@ namespace Pql.ClientDriver
             var toCopy = Math.Min(values.Length, FieldArrayIndexes.Length);
             for (var i = 0; i < toCopy; i++)
             {
-                values[i] = GetValue(i);
+                values[i] = GetValue(i) ?? DBNull.Value;
             }
 
             return toCopy;
@@ -501,8 +422,6 @@ namespace Pql.ClientDriver
                 var indexInArray = FieldArrayIndexes[indexInResponse];
                 switch (FieldTypes[indexInResponse])
                 {
-                    //case DbType.VarNumeric:
-                    //    break;
                     case DbType.Object:
                     case DbType.Binary:
                         {
@@ -567,6 +486,8 @@ namespace Pql.ClientDriver
                             }
                         }
                         break;
+
+                    case DbType.VarNumeric:
                     default:
                         throw new DataException("Invalid DbType: " + FieldTypes[indexInResponse]);
                 }
@@ -591,8 +512,6 @@ namespace Pql.ClientDriver
 
                 switch (FieldTypes[indexInResponse])
                 {
-                    //case DbType.VarNumeric:
-                    //    break;
                     case DbType.Object:
                     case DbType.Binary:
                         {
@@ -651,6 +570,8 @@ namespace Pql.ClientDriver
                             }
                         }
                         break;
+
+                    case DbType.VarNumeric:
                     default:
                         throw new DataException("Invalid DbType: " + FieldTypes[indexInResponse]);
                 }

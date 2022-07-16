@@ -100,8 +100,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override string GetName(int i) => _scheme.GetName(i);
 
         /// <summary>
@@ -112,8 +111,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override string GetDataTypeName(int i) => _scheme.RequireField(i).DataType.ToString();
 
         /// <summary>
@@ -133,8 +131,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override Type GetFieldType(int i) => RowData.DeriveSystemType(_scheme.RequireField(i).DataType);
 
         /// <summary>
@@ -145,8 +142,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override object GetValue(int i) => CurrentRow.GetValue(i);
 
         /// <summary>
@@ -156,8 +152,7 @@ namespace Pql.ClientDriver
         /// The number of instances of <see cref="T:System.Object"/> in the array.
         /// </returns>
         /// <param name="values">An array of <see cref="T:System.Object"/> to copy the attribute fields into. </param>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override int GetValues(object[] values) => CurrentRow.GetValues(values);
 
         /// <summary>
@@ -166,8 +161,7 @@ namespace Pql.ClientDriver
         /// <returns>
         /// The index of the named field.
         /// </returns>
-        /// <param name="name">The name of the field to find. </param><filterpriority>2</filterpriority>
-        
+        /// <param name="name">The name of the field to find. </param><filterpriority>2</filterpriority>        
         public override int GetOrdinal(string name) => _scheme.RequireField(name).Ordinal;
 
         /// <summary>
@@ -178,8 +172,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The zero-based column ordinal. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override bool GetBoolean(int i) => CurrentRow.GetBoolean(i);
 
         /// <summary>
@@ -190,8 +183,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The zero-based column ordinal. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override byte GetByte(int i) => CurrentRow.GetByte(i);
 
         /// <summary>
@@ -206,9 +198,8 @@ namespace Pql.ClientDriver
         /// <param name="bufferoffset">The index for <paramref name="buffer"/> to start the read operation. </param>
         /// <param name="length">The number of bytes to read. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
-        public override long GetBytes(int i, long fieldoffset, byte[] buffer, int bufferoffset, int length) => CurrentRow.GetBinary(i, fieldoffset, buffer, bufferoffset, length);
+        /// <filterpriority>2</filterpriority>        
+        public override long GetBytes(int i, long fieldoffset, byte[]? buffer, int bufferoffset, int length) => CurrentRow.GetBinary(i, fieldoffset, buffer, bufferoffset, length);
 
         /// <summary>
         /// Gets the character value of the specified column.
@@ -218,8 +209,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The zero-based column ordinal. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override char GetChar(int i) => CurrentRow.GetChar(i);
 
         /// <summary>
@@ -233,8 +223,7 @@ namespace Pql.ClientDriver
         /// <param name="bufferoffset">The index for <paramref name="buffer"/> to start the read operation. </param>
         /// <param name="length">The number of bytes to read. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length) => CurrentRow.GetChars(i, fieldoffset, buffer, bufferoffset, length);
 
         /// <summary>
@@ -245,8 +234,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override Guid GetGuid(int i) => CurrentRow.GetGuid(i);
 
         /// <summary>
@@ -257,8 +245,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override short GetInt16(int i) => CurrentRow.GetInt16(i);
 
         /// <summary>
@@ -269,8 +256,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override int GetInt32(int i) => CurrentRow.GetInt32(i);
 
         /// <summary>
@@ -281,8 +267,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override long GetInt64(int i) => CurrentRow.GetInt64(i);
 
         /// <summary>
@@ -293,8 +278,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override float GetFloat(int i) => CurrentRow.GetFloat(i);
 
         /// <summary>
@@ -305,8 +289,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override double GetDouble(int i) => CurrentRow.GetDouble(i);
 
         /// <summary>
@@ -317,8 +300,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override string GetString(int i) => CurrentRow.GetString(i);
 
         /// <summary>
@@ -329,8 +311,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override decimal GetDecimal(int i) => CurrentRow.GetCurrency(i);
 
         /// <summary>
@@ -341,8 +322,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override DateTime GetDateTime(int i) => CurrentRow.GetDateTime(i);
 
         /// <summary>
@@ -353,8 +333,7 @@ namespace Pql.ClientDriver
         /// </returns>
         /// <param name="i">The index of the field to find. </param>
         /// <exception cref="T:System.IndexOutOfRangeException">The index passed was outside the range of 0 through <see cref="P:System.Data.IDataRecord.FieldCount"/>. </exception>
-        /// <filterpriority>2</filterpriority>
-        
+        /// <filterpriority>2</filterpriority>        
         public override bool IsDBNull(int i) => !BitVector.Get(CurrentRow.NotNulls, i);
 
         /// <summary>

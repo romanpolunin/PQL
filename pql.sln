@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pql.ExpressionEngine.Tests"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pql.ClientDriver", "Pql.ClientDriver\Pql.ClientDriver.csproj", "{1F200449-BBEE-4291-B7EB-F88B055CB648}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pql.ClientDriver.Tests", "Pql.ClientDriver.Tests\Pql.ClientDriver.Tests.csproj", "{768F6346-8E12-4C93-B0A4-EC0AAABF69D6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pql.ClientDriver.Tests", "Pql.ClientDriver.Tests\Pql.ClientDriver.Tests.csproj", "{768F6346-8E12-4C93-B0A4-EC0AAABF69D6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pql.Server", "Pql.Server\Pql.Server.csproj", "{E811AAA9-043D-4DB9-A810-6732E77A9E6E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,6 +71,18 @@ Global
 		{768F6346-8E12-4C93-B0A4-EC0AAABF69D6}.Release|x64.Build.0 = Release|Any CPU
 		{768F6346-8E12-4C93-B0A4-EC0AAABF69D6}.Release|x86.ActiveCfg = Release|Any CPU
 		{768F6346-8E12-4C93-B0A4-EC0AAABF69D6}.Release|x86.Build.0 = Release|Any CPU
+		{E811AAA9-043D-4DB9-A810-6732E77A9E6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E811AAA9-043D-4DB9-A810-6732E77A9E6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E811AAA9-043D-4DB9-A810-6732E77A9E6E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E811AAA9-043D-4DB9-A810-6732E77A9E6E}.Debug|x64.Build.0 = Debug|Any CPU
+		{E811AAA9-043D-4DB9-A810-6732E77A9E6E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E811AAA9-043D-4DB9-A810-6732E77A9E6E}.Debug|x86.Build.0 = Debug|Any CPU
+		{E811AAA9-043D-4DB9-A810-6732E77A9E6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E811AAA9-043D-4DB9-A810-6732E77A9E6E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E811AAA9-043D-4DB9-A810-6732E77A9E6E}.Release|x64.ActiveCfg = Release|Any CPU
+		{E811AAA9-043D-4DB9-A810-6732E77A9E6E}.Release|x64.Build.0 = Release|Any CPU
+		{E811AAA9-043D-4DB9-A810-6732E77A9E6E}.Release|x86.ActiveCfg = Release|Any CPU
+		{E811AAA9-043D-4DB9-A810-6732E77A9E6E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

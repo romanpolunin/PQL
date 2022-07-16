@@ -1,8 +1,6 @@
 ﻿using System.Data;
 using System.Data.Common;
 
-using Grpc.Net.Client;
-
 using Pql.ClientDriver.Protocol;
 using Pql.ClientDriver.Protocol.Wire;
 
@@ -272,7 +270,7 @@ namespace Pql.ClientDriver
                 throw new ArgumentNullException(nameof(bulkArgs));
             }
 
-            if (statementType != StatementType.Insert && statementType != StatementType.Update)
+            if (statementType is not StatementType.Insert and not StatementType.Update)
             {
                 throw new ArgumentOutOfRangeException(nameof(statementType), statementType, "Only insert and update bulk statements are supported");
             }
