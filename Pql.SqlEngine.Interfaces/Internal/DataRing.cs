@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
+﻿using System.Collections.Concurrent;
 
-namespace Pql.Engine.Interfaces.Internal
+namespace Pql.SqlEngine.Interfaces.Internal
 {
     /// <summary>
     /// A combination of a blocking collection and a pool. 
@@ -12,9 +9,9 @@ namespace Pql.Engine.Interfaces.Internal
     /// <typeparam name="T">Type of the work item object.</typeparam>
     public class DataRing<T> : IDisposable where T : class 
     {
-        private BlockingCollection<T> m_readyForProcessing;
-        private BlockingCollection<T> m_completedProcessing;
-        private volatile bool m_disposed;
+        private BlockingCollection<T> _readyForProcessing;
+        private BlockingCollection<T> _completedProcessing;
+        private volatile bool _disposed;
 
         /// <summary>
         /// Ctr.
@@ -33,18 +30,15 @@ namespace Pql.Engine.Interfaces.Internal
                 throw new ArgumentOutOfRangeException(nameof(maxPoolSize), maxPoolSize, "Must be positive");
             }
 
-            m_readyForProcessing = new BlockingCollection<T>(new ConcurrentQueue<T>(), maxQueueSize);
-            m_completedProcessing = new BlockingCollection<T>(new ConcurrentQueue<T>(), maxPoolSize);
+            _readyForProcessing = new BlockingCollection<T>(new ConcurrentQueue<T>(), maxQueueSize);
+            _completedProcessing = new BlockingCollection<T>(new ConcurrentQueue<T>(), maxPoolSize);
         }
 
         /// <summary>
         /// Number of items in the queue, affects clients of <see cref="ConsumeProcessingTasks"/> and <see cref="AddTaskForProcessing"/>.
         /// Cannot be more than the constraint value provided in the constructor.
         /// </summary>
-        public int QueueLength
-        {
-            get { return m_disposed ? 0 : m_readyForProcessing.Count; }
-        }
+        public int QueueLength => _disposed ? 0 : _readyForProcessing.Count;
 
         /// <summary>
         /// Takes an object from the pool or blocks until some object is returned to pool.
@@ -53,7 +47,7 @@ namespace Pql.Engine.Interfaces.Internal
         public T TakeCompletedTask(CancellationToken cancellationToken)
         {
             CheckDisposed();
-            var item = m_completedProcessing.Take(cancellationToken);
+            var item = _completedProcessing.Take(cancellationToken);
             return item;
         }
 
@@ -65,7 +59,7 @@ namespace Pql.Engine.Interfaces.Internal
         public void AddTaskForProcessing(T item, CancellationToken cancellationToken)
         {
             CheckDisposed();
-            m_readyForProcessing.Add(item, cancellationToken);
+            _readyForProcessing.Add(item, cancellationToken);
         }
 
         /// <summary>
@@ -75,9 +69,9 @@ namespace Pql.Engine.Interfaces.Internal
         public void ReturnCompletedTask(T item)
         {
             CheckDisposed();
-            if (!m_completedProcessing.TryAdd(item, 0))
+            if (!_completedProcessing.TryAdd(item, 0))
             {
-                throw new InvalidOperationException("Internal error: pool size cannot grow above " + m_completedProcessing.BoundedCapacity);
+                throw new InvalidOperationException("Internal error: pool size cannot grow above " + _completedProcessing.BoundedCapacity);
             }
         }
 
@@ -88,7 +82,7 @@ namespace Pql.Engine.Interfaces.Internal
         public IEnumerable<T> ConsumeProcessingTasks(CancellationToken cancellationToken)
         {
             CheckDisposed();
-            return m_readyForProcessing.GetConsumingEnumerable(cancellationToken);
+            return _readyForProcessing.GetConsumingEnumerable(cancellationToken);
         }
 
         /// <summary>
@@ -99,7 +93,7 @@ namespace Pql.Engine.Interfaces.Internal
         {
             CheckDisposed();
             
-            var ready = m_readyForProcessing;
+            var ready = _readyForProcessing;
             if (ready != null && !ready.IsAddingCompleted)
             {
                 ready.CompleteAdding();
@@ -114,7 +108,7 @@ namespace Pql.Engine.Interfaces.Internal
         {
             CheckDisposed();
 
-            var completed = m_completedProcessing;
+            var completed = _completedProcessing;
             if (completed != null && !completed.IsAddingCompleted)
             {
                 completed.CompleteAdding();
@@ -123,7 +117,7 @@ namespace Pql.Engine.Interfaces.Internal
 
         private void CheckDisposed()
         {
-            if (m_disposed)
+            if (_disposed)
             {
                 throw new ObjectDisposedException(GetType().Name);
             }
@@ -133,10 +127,7 @@ namespace Pql.Engine.Interfaces.Internal
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         /// <filterpriority>2</filterpriority>
-        public void Dispose()
-        {
-            Dispose(true);
-        }
+        public void Dispose() => Dispose(true);
 
         private void Dispose(bool disposing)
         {
@@ -145,23 +136,27 @@ namespace Pql.Engine.Interfaces.Internal
                 GC.SuppressFinalize(this);
             }
 
-            m_disposed = true;
+            _disposed = true;
 
-            var ready = Interlocked.CompareExchange(ref m_readyForProcessing, null, m_readyForProcessing);
-            var completed = Interlocked.CompareExchange(ref m_completedProcessing, null, m_completedProcessing);
+            var ready = Interlocked.CompareExchange(ref _readyForProcessing, null, _readyForProcessing);
+            var completed = Interlocked.CompareExchange(ref _completedProcessing, null, _completedProcessing);
             
             if (ready != null && !ready.IsCompleted)
             {
-                while (ready.TryTake(out var item))
-                    ;
+                while (ready.TryTake(out _))
+                {
+                    
+                }
 
                 ready.Dispose();
             }
 
             if (completed != null && !completed.IsCompleted)
             {
-                while (completed.TryTake(out var item))
-                    ;
+                while (completed.TryTake(out _))
+                {
+                    
+                }
 
                 completed.Dispose();
             }

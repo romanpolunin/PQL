@@ -6,7 +6,7 @@ namespace Pql.ExpressionEngine.Utilities
     /// Implements object pool with bounded capacity.
     /// </summary>
     /// <typeparam name="T">Type of object to hold</typeparam>
-    internal class ObjectPool<T> where T : class
+    public class ObjectPool<T> where T : class
     {
         private readonly Func<T> _objectFactory;
         private readonly BlockingCollection<T> _items;

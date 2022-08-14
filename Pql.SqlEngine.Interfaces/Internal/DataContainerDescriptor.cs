@@ -1,39 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.Serialization;
+﻿using System.Reflection;
+using System.Text.Json.Serialization;
 
-namespace Pql.Engine.Interfaces.Internal
+namespace Pql.SqlEngine.Interfaces.Internal
 {
-    [DataContract]
-    public class DataContainerDescriptor
+    public class DataContainerDescriptor: IJsonOnDeserialized
     {
         static DataContainerDescriptor()
         {
-            // after deserialization, have to make sure that the deserialized dictionary uses proper case-insensitive comparer
-            FieldSetterStringInt = typeof(Dictionary<string, int>).GetField("comparer", BindingFlags.NonPublic | BindingFlags.Instance);
+            // after deserialization, have to make sure that the deserialized dictionary
+            // uses proper case-insensitive comparer
+            s_fieldSetterStringInt = typeof(Dictionary<string, int>)
+                .GetField("comparer", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?? throw new Exception("Failed to reflect: " + nameof(s_fieldSetterStringInt));
         }
 
-        [DataMember(IsRequired = true, EmitDefaultValue = true)]
+        [JsonInclude]
         protected Dictionary<string, int> DocTypeNameToDocType;
 
-        [DataMember(IsRequired = true, EmitDefaultValue = true)]
+        [JsonInclude]
         protected Dictionary<int, JoinDescriptor> JoinDescriptors;
 
-        [DataMember(IsRequired = true, EmitDefaultValue = true)]
+        [JsonInclude]
         protected Dictionary<int, DocumentTypeDescriptor> DocumentTypeDescriptors;
 
-        [DataMember(IsRequired = true, EmitDefaultValue = true)]
+        [JsonInclude]
         protected Dictionary<int, FieldMetadata> Fields;
-
-        [IgnoreDataMember]
-        private Dictionary<int, Dictionary<string, int>> DocTypeFieldNameToFieldId;
-        private static readonly FieldInfo FieldSetterStringInt;
+        
+        private Dictionary<int, Dictionary<string, int>> _docTypeFieldNameToFieldId;
+        private static readonly FieldInfo s_fieldSetterStringInt;
 
         public DataContainerDescriptor()
         {
-            OnDeserialized(new StreamingContext(StreamingContextStates.Other));
+            (this as IJsonOnDeserialized).OnDeserialized();
         }
 
         public FieldMetadata RequireField(int fieldId)
@@ -58,9 +56,9 @@ namespace Pql.Engine.Interfaces.Internal
             return result;
         }
 
-        public FieldMetadata TryGetField(int docType, string fieldName)
+        public FieldMetadata? TryGetField(int docType, string fieldName)
         {
-            if (!DocTypeFieldNameToFieldId.TryGetValue(docType, out var docFields))
+            if (!_docTypeFieldNameToFieldId.TryGetValue(docType, out var docFields))
             {
                 return null;
             }
@@ -74,8 +72,7 @@ namespace Pql.Engine.Interfaces.Internal
             return RequireField(fieldId);
         }
 
-        [OnDeserialized]
-        protected void OnDeserialized(StreamingContext streamingContext)
+        void IJsonOnDeserialized.OnDeserialized()
         {
             if (DocTypeNameToDocType == null)
             {
@@ -85,7 +82,7 @@ namespace Pql.Engine.Interfaces.Internal
             {
                 // have to make sure that deserialized dictionary uses proper comparer
                 // using this little dirty private field setter 
-                FieldSetterStringInt.SetValue(DocTypeNameToDocType, StringComparer.OrdinalIgnoreCase);
+                s_fieldSetterStringInt.SetValue(DocTypeNameToDocType, StringComparer.OrdinalIgnoreCase);
             }
 
             if (JoinDescriptors == null)
@@ -103,7 +100,7 @@ namespace Pql.Engine.Interfaces.Internal
                 Fields = new Dictionary<int, FieldMetadata>();
             }
 
-            DocTypeFieldNameToFieldId = new Dictionary<int, Dictionary<string, int>>();
+            _docTypeFieldNameToFieldId = new Dictionary<int, Dictionary<string, int>>();
             foreach (var docType in DocumentTypeDescriptors)
             {
                 var dict = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -112,7 +109,7 @@ namespace Pql.Engine.Interfaces.Internal
                     dict.Add(RequireField(fieldId).Name, fieldId);
                 }
                 
-                DocTypeFieldNameToFieldId.Add(docType.Key, dict);
+                _docTypeFieldNameToFieldId.Add(docType.Key, dict);
             }
 
             Validate();
@@ -176,7 +173,7 @@ namespace Pql.Engine.Interfaces.Internal
             }
         }
 
-        public string TryGetDocTypeName(int docType)
+        public string? TryGetDocTypeName(int docType)
         {
             foreach (var pair in DocTypeNameToDocType)
             {
@@ -199,25 +196,13 @@ namespace Pql.Engine.Interfaces.Internal
             return result;
         }
 
-        public DocumentTypeDescriptor RequireDocumentType(string docTypeName)
-        {
-            return RequireDocumentType(RequireDocumentTypeName(docTypeName));
-        }
+        public DocumentTypeDescriptor RequireDocumentType(string docTypeName) => RequireDocumentType(RequireDocumentTypeName(docTypeName));
 
-        public IEnumerable<DocumentTypeDescriptor> EnumerateDocumentTypes()
-        {
-            return DocumentTypeDescriptors.Values;
-        }
+        public IEnumerable<DocumentTypeDescriptor> EnumerateDocumentTypes() => DocumentTypeDescriptors.Values;
 
-        public IEnumerable<FieldMetadata> EnumerateFields()
-        {
-            return Fields.Values;
-        }
+        public IEnumerable<FieldMetadata> EnumerateFields() => Fields.Values;
 
-        public IEnumerable<Tuple<int, string>> EnumerateDocumentTypeNames()
-        {
-            return DocTypeNameToDocType.Select(x => new Tuple<int, string>(x.Value, x.Key));
-        }
+        public IEnumerable<Tuple<int, string>> EnumerateDocumentTypeNames() => DocTypeNameToDocType.Select(x => new Tuple<int, string>(x.Value, x.Key));
 
         public void AddField(FieldMetadata field)
         {
@@ -233,10 +218,10 @@ namespace Pql.Engine.Interfaces.Internal
 
             var docType = field.OwnerDocumentType;
 
-            if (!DocTypeFieldNameToFieldId.TryGetValue(field.OwnerDocumentType, out var docFields))
+            if (!_docTypeFieldNameToFieldId.TryGetValue(field.OwnerDocumentType, out var docFields))
             {
                 docFields = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                DocTypeFieldNameToFieldId.Add(field.OwnerDocumentType, docFields);
+                _docTypeFieldNameToFieldId.Add(field.OwnerDocumentType, docFields);
             }
 
             if (docFields.ContainsKey(field.Name))
@@ -249,10 +234,7 @@ namespace Pql.Engine.Interfaces.Internal
             docFields.Add(field.Name, field.FieldId);
         }
 
-        public void AddIdentifierAlias(string docTypeName, List<string> alias, string[] mapped)
-        {
-            RequireDocumentType(RequireDocumentTypeName(docTypeName)).AddIdentifierAlias(alias, mapped);
-        }
+        public void AddIdentifierAlias(string docTypeName, List<string> alias, string[] mapped) => RequireDocumentType(RequireDocumentTypeName(docTypeName)).AddIdentifierAlias(alias, mapped);
 
         public void AddDocumentTypeName(string name)
         {
@@ -284,6 +266,7 @@ namespace Pql.Engine.Interfaces.Internal
                     "Supplied document type id {0} does not match existing id {1} for document type {2}",
                     docType.DocumentType, existing, docType.Name));
             }
+
             DocumentTypeDescriptors.Add(docType.DocumentType, docType);
         }
 

@@ -1,12 +1,12 @@
-﻿using System;
-using System.Data;
+﻿using System.Data;
 using System.Linq.Expressions;
-using Pql.Engine.DataContainer.Parser;
-using Pql.Engine.Interfaces.Internal;
-using Pql.Engine.Interfaces.Services;
-using Pql.ExpressionEngine.Interfaces;
 
-namespace Pql.Engine.DataContainer.Engine
+using Pql.SqlEngine.DataContainer.Parser;
+using Pql.ExpressionEngine.Interfaces;
+using Pql.SqlEngine.Interfaces.Internal;
+using Pql.SqlEngine.Interfaces.Services;
+
+namespace Pql.SqlEngine.DataContainer.Engine
 {
     public sealed partial class DataEngine
     {
@@ -137,10 +137,10 @@ namespace Pql.Engine.DataContainer.Engine
                     CompileSelectClauses(containerDescriptor, cacheInfo);
                     break;
                 case StatementType.Update:
-                    CompileInsertUpdateClauses(m_storageDriver, containerDescriptor, cacheInfo, DriverChangeType.Update);
+                    CompileInsertUpdateClauses(_storageDriver, containerDescriptor, cacheInfo, DriverChangeType.Update);
                     break;
                 case StatementType.Insert:
-                    CompileInsertUpdateClauses(m_storageDriver, containerDescriptor, cacheInfo, DriverChangeType.Insert);
+                    CompileInsertUpdateClauses(_storageDriver, containerDescriptor, cacheInfo, DriverChangeType.Insert);
                     break;
                 case StatementType.Delete:
                     break;

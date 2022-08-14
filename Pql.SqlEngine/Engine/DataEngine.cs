@@ -1,63 +1,56 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Data;
-using System.Threading;
-using System.Threading.Tasks;
-using Pql.ClientDriver;
-using Pql.ClientDriver.Protocol;
-using Pql.Engine.DataContainer.Parser;
-using Pql.Engine.Interfaces;
-using Pql.Engine.Interfaces.Internal;
-using Pql.Engine.Interfaces.Services;
-using ProtoBuf;
 
-namespace Pql.Engine.DataContainer.Engine
+using Pql.Server.Protocol.Wire;
+using Pql.SqlEngine.DataContainer.Parser;
+using Pql.SqlEngine.Interfaces;
+using Pql.SqlEngine.Interfaces.Internal;
+using Pql.SqlEngine.Interfaces.Services;
+
+namespace Pql.SqlEngine.DataContainer.Engine
 {
     public sealed partial class DataEngine : IDataEngine
     {
-        private readonly ConcurrentDictionary<RequestExecutionContext, Task> m_activeProcessors;
-        private readonly int m_maxConcurrency;
-        private readonly ITracer m_tracer;
-        private readonly ParsedRequestCache m_parsedRequestCache;
-        private readonly IStorageDriver m_storageDriver;
-        private readonly QueryParser m_parser;
-        private readonly DataContainerDescriptor m_containerDescriptor;
-        private DateTime m_utcLastUsedAt;
-        private volatile bool m_disposed;
+        private readonly ConcurrentDictionary<RequestExecutionContext, Task> _activeProcessors;
+        private readonly int _maxConcurrency;
+        private readonly ITracer _tracer;
+        private readonly ParsedRequestCache _parsedRequestCache;
+        private readonly IStorageDriver _storageDriver;
+        private readonly QueryParser _parser;
+        private readonly DataContainerDescriptor _containerDescriptor;
+        private DateTime _utcLastUsedAt;
+        private volatile bool _disposed;
 
         public DataEngine(ITracer tracer, string instanceName, int maxConcurrency, IStorageDriver storageDriver, DataContainerDescriptor containerDescriptor)
         {
-            if (maxConcurrency <= 0 || maxConcurrency > 10000)
+            if (maxConcurrency is <= 0 or > 10000)
             {
                 throw new ArgumentOutOfRangeException(nameof(maxConcurrency));
             }
 
-            m_tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
-            m_containerDescriptor = containerDescriptor ?? throw new ArgumentNullException(nameof(containerDescriptor));
-            m_maxConcurrency = maxConcurrency;
-            m_parsedRequestCache = new ParsedRequestCache(instanceName);
-            m_storageDriver = storageDriver ?? throw new ArgumentNullException(nameof(storageDriver));
-            m_parser = new QueryParser(containerDescriptor, maxConcurrency);
-            m_activeProcessors = new ConcurrentDictionary<RequestExecutionContext, Task>(m_maxConcurrency, m_maxConcurrency);
-            m_utcLastUsedAt = DateTime.UtcNow;
+            _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+            _containerDescriptor = containerDescriptor ?? throw new ArgumentNullException(nameof(containerDescriptor));
+            _maxConcurrency = maxConcurrency;
+            _parsedRequestCache = new ParsedRequestCache(instanceName);
+            _storageDriver = storageDriver ?? throw new ArgumentNullException(nameof(storageDriver));
+            _parser = new QueryParser(containerDescriptor, maxConcurrency);
+            _activeProcessors = new ConcurrentDictionary<RequestExecutionContext, Task>(_maxConcurrency, _maxConcurrency);
+            _utcLastUsedAt = DateTime.UtcNow;
         }
 
-        public DateTime UtcLastUsedAt
-        {
-            get { return m_activeProcessors.Count > 0 ? DateTime.UtcNow : m_utcLastUsedAt; }
-        }
+        public DateTime UtcLastUsedAt => _activeProcessors.Count > 0 ? DateTime.UtcNow : _utcLastUsedAt;
 
         public void WriteStateInfoToLog()
         {
-            if (m_disposed || !m_tracer.IsInfoEnabled)
+            if (_disposed || !_tracer.IsInfoEnabled)
             {
                 return;
             }
 
             var lastUsed = UtcLastUsedAt;
-            m_tracer.InfoFormat("Number of active contexts: {0}, Last used: {1}, Unused age: {2}", 
-                m_activeProcessors.Count, lastUsed, (DateTime.UtcNow - lastUsed));
-            foreach (var item in m_activeProcessors)
+            _tracer.InfoFormat("Number of active contexts: {0}, Last used: {1}, Unused age: {2}", 
+                _activeProcessors.Count, lastUsed, (DateTime.UtcNow - lastUsed));
+            foreach (var item in _activeProcessors)
             {
                 try
                 {
@@ -69,7 +62,7 @@ namespace Pql.Engine.DataContainer.Engine
                         cmdText = string.Format("Bulk {0} with {2} items on {1}", ctx.RequestBulk.DbStatementType, ctx.RequestBulk.EntityName, ctx.RequestBulk.InputItemsCount);
                     }
 
-                    m_tracer.InfoFormat(
+                    _tracer.InfoFormat(
                         "AuthTicket: {0}; CommandText: {1}; PrepareOnly: {2}; ReturnDataset: {3}; HaveRequestBulk: {4}; HaveParams: {5}; "
                         + "TotalRowsProduced: {6}; records affected: {7}; received on: {8}; age: {9} seconds; producer status: {10}", 
                         ctx.RequestMessage.AuthTicket, cmdText, ctx.Request.PrepareOnly, ctx.Request.ReturnDataset, 
@@ -88,9 +81,9 @@ namespace Pql.Engine.DataContainer.Engine
                 return;
             }
 
-            m_disposed = true;
+            _disposed = true;
 
-            foreach (var executionContext in m_activeProcessors.Keys)
+            foreach (var executionContext in _activeProcessors.Keys)
             {
                 try
                 {
@@ -103,15 +96,15 @@ namespace Pql.Engine.DataContainer.Engine
                         return;
                     }
 
-                    m_tracer.Exception(e);
+                    _tracer.Exception(e);
                 }
             }
             
-            m_parsedRequestCache.Dispose();
+            _parsedRequestCache.Dispose();
             
-            if (m_storageDriver != null)
+            if (_storageDriver != null)
             {
-                m_storageDriver.Dispose();
+                _storageDriver.Dispose();
             }
         }
 
@@ -119,9 +112,9 @@ namespace Pql.Engine.DataContainer.Engine
         {
             CheckDisposed();
 
-            m_utcLastUsedAt = DateTime.UtcNow;
+            _utcLastUsedAt = DateTime.UtcNow;
 
-            if (m_activeProcessors.ContainsKey(context))
+            if (_activeProcessors.ContainsKey(context))
             {
                 throw new InvalidOperationException("This context is marked as being executed now");
             }
@@ -130,7 +123,7 @@ namespace Pql.Engine.DataContainer.Engine
                 () => ProducerThreadMethod(context),
                 TaskCreationOptions.LongRunning);
 
-            if (!m_activeProcessors.TryAdd(context, task))
+            if (!_activeProcessors.TryAdd(context, task))
             {
                 throw new Exception("Could not register executing task for this context");
             }
@@ -141,7 +134,7 @@ namespace Pql.Engine.DataContainer.Engine
             }
             catch
             {
-                m_activeProcessors.TryRemove(context, out task);
+                _activeProcessors.TryRemove(context, out task);
                 throw;
             }
         }
@@ -240,7 +233,7 @@ namespace Pql.Engine.DataContainer.Engine
                     {
                         buffer.Error = e;
                         context.TrySetLastError(e);
-                        m_tracer.Exception(e);
+                        _tracer.Exception(e);
 
                         // this will go to client, and overwrite whatever we managed to put into buffer before failure
                         using var writer = new PqlErrorDataWriter(1, e, false);
@@ -271,7 +264,7 @@ namespace Pql.Engine.DataContainer.Engine
                 var cts = context.CancellationTokenSource;
                 if (cts != null && !cts.IsCancellationRequested)
                 {
-                    m_tracer.Exception(e);
+                    _tracer.Exception(e);
                     context.Cancel(e);
                 }
             }
@@ -296,7 +289,7 @@ namespace Pql.Engine.DataContainer.Engine
         {
             ReadRequest(context);
 
-            context.AttachContainerDescriptor(m_containerDescriptor);
+            context.AttachContainerDescriptor(_containerDescriptor);
 
             if (!context.CacheInfo.HaveParsingResults)
             {
@@ -363,7 +356,7 @@ namespace Pql.Engine.DataContainer.Engine
 
                 // driver returns set of rows related to given set of PK values
                 // for a bulk request, sourceEnumerator will yield exactly one item for each item in input enumerator
-                sourceEnumerator = m_storageDriver.GetData(context);
+                sourceEnumerator = _storageDriver.GetData(context);
             }
 
             switch (context.ParsedRequest.StatementType)
@@ -449,7 +442,7 @@ namespace Pql.Engine.DataContainer.Engine
             context.ClauseEvaluationContext.RowNumberInOutput = context.ClauseEvaluationContext.RowNumber;
             var changeBuffer = context.ClauseEvaluationContext.ChangeBuffer;
 
-            var changeset = m_storageDriver.CreateChangeset(changeBuffer, context.ParsedRequest.IsBulk);
+            var changeset = _storageDriver.CreateChangeset(changeBuffer, context.ParsedRequest.IsBulk);
             try
             {
                 changeBuffer.ChangeType = DriverChangeType.Delete;
@@ -463,7 +456,7 @@ namespace Pql.Engine.DataContainer.Engine
                         sourceEnumerator.FetchAdditionalFields();
                         sourceEnumerator.FetchInternalEntityIdIntoChangeBuffer(changeBuffer, context);
 
-                        m_storageDriver.AddChange(changeset);
+                        _storageDriver.AddChange(changeset);
                     }
 
                     // row number is needed for "rownum()" Pql function
@@ -474,12 +467,12 @@ namespace Pql.Engine.DataContainer.Engine
 
                 if (!cts.IsCancellationRequested)
                 {
-                    context.RecordsAffected = m_storageDriver.Apply(changeset);
+                    context.RecordsAffected = _storageDriver.Apply(changeset);
                 }
             }
             catch
             {
-                m_storageDriver.Discard(changeset);
+                _storageDriver.Discard(changeset);
                 throw;
             }
         }
@@ -490,7 +483,7 @@ namespace Pql.Engine.DataContainer.Engine
             {
                 case ParsedRequest.SpecialCommandData.SpecialCommandType.Defragment:
                     context.AttachResponseHeaders(new DataResponse(0, "Defragmentation completed"));
-                    m_storageDriver.Compact(CompactionOptions.FullReindex);
+                    _storageDriver.Compact(CompactionOptions.FullReindex);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(context), context.ParsedRequest.SpecialCommand.CommandType, "Invalid special command");
@@ -514,7 +507,7 @@ namespace Pql.Engine.DataContainer.Engine
             context.ClauseEvaluationContext.RowNumberInOutput = context.ClauseEvaluationContext.RowNumber;
             var changeBuffer = context.ClauseEvaluationContext.ChangeBuffer;
             
-            var changeset = m_storageDriver.CreateChangeset(changeBuffer, context.ParsedRequest.IsBulk);
+            var changeset = _storageDriver.CreateChangeset(changeBuffer, context.ParsedRequest.IsBulk);
             try
             {
                 changeBuffer.ChangeType = changeType;
@@ -540,7 +533,7 @@ namespace Pql.Engine.DataContainer.Engine
                         // or from the computed change buffer data (for non-bulk inserts)
                         sourceEnumerator.FetchInternalEntityIdIntoChangeBuffer(changeBuffer, context);
                         
-                        m_storageDriver.AddChange(changeset);
+                        _storageDriver.AddChange(changeset);
                     }
 
                     // row number is needed for "rownum()" Pql function
@@ -551,12 +544,12 @@ namespace Pql.Engine.DataContainer.Engine
 
                 if (!cts.IsCancellationRequested)
                 {
-                    context.RecordsAffected = m_storageDriver.Apply(changeset);
+                    context.RecordsAffected = _storageDriver.Apply(changeset);
                 }
             }
             catch
             {
-                m_storageDriver.Discard(changeset);
+                _storageDriver.Discard(changeset);
                 throw;
             }
         }
@@ -569,12 +562,12 @@ namespace Pql.Engine.DataContainer.Engine
 
         public void EndExecution(RequestExecutionContext context, bool waitForProducerThread)
         {
-            if (m_disposed)
+            if (_disposed)
             {
                 return;
             }
 
-            var processors = m_activeProcessors;
+            var processors = _activeProcessors;
             if (processors != null)
             {
                 if (processors.TryRemove(context, out var task) && waitForProducerThread && !task.IsCompleted)
@@ -586,7 +579,7 @@ namespace Pql.Engine.DataContainer.Engine
 
         private void CheckDisposed()
         {
-            if (m_disposed)
+            if (_disposed)
             {
                 throw new ObjectDisposedException(GetType().Name);
             }

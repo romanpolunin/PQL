@@ -112,10 +112,7 @@ namespace Pql.ExpressionEngine.Compiler
         /// <returns>Compiled lambda, some flavor of Func or Action</returns>
         /// <exception cref="ArgumentNullException"><paramref name="text"/> is null</exception>
         /// <exception cref="CompilationException">Compilation errors, check exception details</exception>
-        public object Compile(string text, Type returnType, params Tuple<string, Type>[] args)
-        {
-            return Compile(text, CancellationToken.None, returnType, args);
-        }
+        public object Compile(string text, Type returnType, params Tuple<string, Type>[] args) => Compile(text, CancellationToken.None, returnType, args);
 
         /// <summary>
         /// Parses, analyzes and compiles given expression string into a CLR lambda of appropriate type (some flavor of Func or Action).
@@ -147,10 +144,7 @@ namespace Pql.ExpressionEngine.Compiler
         /// <returns>Compiled Func</returns>
         /// <exception cref="ArgumentNullException"><paramref name="text"/> is null</exception>
         /// <exception cref="CompilationException">Compilation errors, check exception details</exception>
-        public Func<TContext, T> Compile<TContext, T>(string text)
-        {
-            return Compile<TContext, T>(text, CancellationToken.None);
-        }
+        public Func<TContext, T> Compile<TContext, T>(string text) => Compile<TContext, T>(text, CancellationToken.None);
 
         /// <summary>
         /// Parses, analyzes and compiles given expression string into a CLR lambda of appropriate type (some flavor of Func or Action).

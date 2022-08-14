@@ -1,18 +1,17 @@
-﻿using System;
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.Globalization;
 using System.Runtime.Caching;
-using System.Runtime.CompilerServices;
-using Pql.ClientDriver.Protocol;
-using Pql.Engine.Interfaces.Internal;
 
-namespace Pql.Engine.DataContainer.Parser
+using Pql.Server.Protocol.Wire;
+using Pql.SqlEngine.Interfaces.Internal;
+
+namespace Pql.SqlEngine.DataContainer.Parser
 {
     internal sealed class ParsedRequestCache : IDisposable
     {
-        private readonly MemoryCache m_generalRequestCache;
-        private readonly MemoryCache m_parameterizedRequestCache;
-        private readonly CacheItemPolicy m_defaultPolicy;
+        private readonly MemoryCache _generalRequestCache;
+        private readonly MemoryCache _parameterizedRequestCache;
+        private readonly CacheItemPolicy _defaultPolicy;
 
         public ParsedRequestCache(string instanceName)
         {
@@ -22,9 +21,9 @@ namespace Pql.Engine.DataContainer.Parser
             }
 
             var config = new NameValueCollection(1) { { "CacheMemoryLimitMegabytes", "200" } };
-            m_defaultPolicy = new CacheItemPolicy { SlidingExpiration = TimeSpan.FromMinutes(10) };
-            m_generalRequestCache = new MemoryCache(instanceName + "-GeneralRequestCache", config);
-            m_parameterizedRequestCache = new MemoryCache(instanceName + "-ParameterizedRequestCache", config);
+            _defaultPolicy = new CacheItemPolicy { SlidingExpiration = TimeSpan.FromMinutes(10) };
+            _generalRequestCache = new MemoryCache(instanceName + "-GeneralRequestCache", config);
+            _parameterizedRequestCache = new MemoryCache(instanceName + "-ParameterizedRequestCache", config);
         }
 
         /// <summary>
@@ -67,7 +66,7 @@ namespace Pql.Engine.DataContainer.Parser
                 {
                     foreach (var dataType in requestParams.DataTypes)
                     {
-                        AppendToHash(ref hash, modulo, (int)dataType);
+                        AppendToHash(ref hash, modulo, dataType);
                     }
 
                     foreach (var bitVectorData in requestParams.IsCollectionFlags)
@@ -98,7 +97,7 @@ namespace Pql.Engine.DataContainer.Parser
 
         public RequestExecutionContextCacheInfo AddOrGetExisting(long hashCode, bool parameterized)
         {
-            var cache = parameterized ? m_parameterizedRequestCache : m_generalRequestCache;
+            var cache = parameterized ? _parameterizedRequestCache : _generalRequestCache;
 
             var key = hashCode.ToString(CultureInfo.InvariantCulture);
             
@@ -108,7 +107,7 @@ namespace Pql.Engine.DataContainer.Parser
             if (obj == null)
             {
                 obj = new RequestExecutionContextCacheInfo(hashCode);
-                var prev = (RequestExecutionContextCacheInfo)cache.AddOrGetExisting(key, obj, m_defaultPolicy);
+                var prev = (RequestExecutionContextCacheInfo)cache.AddOrGetExisting(key, obj, _defaultPolicy);
 
                 if (prev != null)
                 {

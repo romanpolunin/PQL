@@ -198,7 +198,7 @@ namespace Pql.ExpressionEngine.Interfaces
             try
             {
                 return left is not ConstantExpression x || right is not ConstantExpression y
-                           ? (Expression)Expression.MakeBinary(op, left, right)
+                           ? Expression.MakeBinary(op, left, right)
                            : EvalConst(root, x, y, op, returnType);
             }
             catch (InvalidOperationException e)
@@ -283,7 +283,7 @@ namespace Pql.ExpressionEngine.Interfaces
 
             try
             {
-                return left is not ConstantExpression constant ? Expression.MakeUnary(op, left, returnType ?? left.Type) : (Expression)EvalConst(root, constant, op, returnType);
+                return left is not ConstantExpression constant ? Expression.MakeUnary(op, left, returnType ?? left.Type) : EvalConst(root, constant, op, returnType);
             }
             catch (InvalidOperationException e)
             {

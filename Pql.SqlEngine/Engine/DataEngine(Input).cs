@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.IO;
+﻿using System.Data;
 using System.Text;
-using System.Threading;
-using Pql.ClientDriver;
-using Pql.ClientDriver.Protocol;
-using Pql.Engine.DataContainer.Parser;
-using Pql.Engine.Interfaces.Internal;
-using Pql.ExpressionEngine.Interfaces;
-using ProtoBuf;
 
-namespace Pql.Engine.DataContainer.Engine
+using Pql.SqlEngine.DataContainer.Parser;
+using Pql.ExpressionEngine.Interfaces;
+using Pql.SqlEngine.Interfaces.Internal;
+
+namespace Pql.SqlEngine.DataContainer.Engine
 {
     public sealed partial class DataEngine
     {
@@ -41,7 +35,7 @@ namespace Pql.Engine.DataContainer.Engine
                 // e.g. we're not yet done reading the request stream here
             }
 
-            if (m_tracer.IsInfoEnabled)
+            if (_tracer.IsInfoEnabled)
             {
                 var cmdText = context.Request.CommandText;
                 if (string.IsNullOrEmpty(cmdText) && context.Request.HaveRequestBulk)
@@ -49,12 +43,12 @@ namespace Pql.Engine.DataContainer.Engine
                     cmdText = string.Format("Bulk {0} with {2} items on {1}", context.RequestBulk.DbStatementType, context.RequestBulk.EntityName, context.RequestBulk.InputItemsCount);
                 }
 
-                m_tracer.Info("Received command: " + cmdText);
+                _tracer.Info("Received command: " + cmdText);
             }
 
             // bring up cache record
             var cacheKey = ParsedRequestCache.GetRequestHash(context.Request, context.RequestBulk, context.RequestParameters);
-            var cacheInfo = m_parsedRequestCache.AddOrGetExisting(cacheKey, context.Request.HaveParameters);
+            var cacheInfo = _parsedRequestCache.AddOrGetExisting(cacheKey, context.Request.HaveParameters);
             context.AttachCachedInfo(cacheInfo);
 
             // populate cache record
@@ -86,12 +80,12 @@ namespace Pql.Engine.DataContainer.Engine
 
             // by now, we have all information about the request at hand, including parameter values data.
             // parser will write results into cacheInfo object
-            m_parser.Parse(request, requestBulk, parsedRequest, cancellation);
+            _parser.Parse(request, requestBulk, parsedRequest, cancellation);
 
-            if (parsedRequest.StatementType == StatementType.Delete || parsedRequest.StatementType == StatementType.Insert)
+            if (parsedRequest.StatementType is StatementType.Delete or StatementType.Insert)
             {
                 // for insert and delete, we need all columns' data ready for modification before we start
-                m_storageDriver.PrepareAllColumnsAndWait(parsedRequest.TargetEntity.DocumentType);
+                _storageDriver.PrepareAllColumnsAndWait(parsedRequest.TargetEntity.DocumentType);
             }
             else
             {
@@ -101,25 +95,25 @@ namespace Pql.Engine.DataContainer.Engine
                 // schedule loading of sort order fields
                 foreach (var field in parsedRequest.BaseDataset.OrderClauseFields)
                 {
-                    m_storageDriver.BeginPrepareColumnData(field.Item1);
+                    _storageDriver.BeginPrepareColumnData(field.Item1);
                 }
 
                 // schedule loading of where clause fields
                 foreach (var field in parsedRequest.BaseDataset.WhereClauseFields)
                 {
-                    m_storageDriver.BeginPrepareColumnData(field.FieldId);
+                    _storageDriver.BeginPrepareColumnData(field.FieldId);
                 }
 
                 // schedule loading of fetched fields
                 foreach (var field in parsedRequest.Select.SelectFields)
                 {
-                    m_storageDriver.BeginPrepareColumnData(field.FieldId);
+                    _storageDriver.BeginPrepareColumnData(field.FieldId);
                 }
 
                 // schedule loading of inserted/updated fields
                 foreach (var field in parsedRequest.Modify.ModifiedFields)
                 {
-                    m_storageDriver.BeginPrepareColumnData(field.FieldId);
+                    _storageDriver.BeginPrepareColumnData(field.FieldId);
                 }
             }
         }
@@ -319,7 +313,7 @@ namespace Pql.Engine.DataContainer.Engine
 
                 case DbType.SByte:
                     {
-                        var result = new HashSet<SByte>();
+                        var result = new HashSet<sbyte>();
                         for (var x = 0; x < itemCount; x++)
                         {
                             result.Add((sbyte)reader.ReadByte());
@@ -329,7 +323,7 @@ namespace Pql.Engine.DataContainer.Engine
 
                 case DbType.Byte:
                     {
-                        var result = new HashSet<Byte>();
+                        var result = new HashSet<byte>();
                         for (var x = 0; x < itemCount; x++)
                         {
                             result.Add(reader.ReadByte());
@@ -350,7 +344,7 @@ namespace Pql.Engine.DataContainer.Engine
                 case DbType.Decimal:
                 case DbType.Currency:
                     {
-                        var result = new HashSet<Decimal>();
+                        var result = new HashSet<decimal>();
                         for (var x = 0; x < itemCount; x++)
                         {
                             result.Add(reader.ReadDecimal());
@@ -382,7 +376,7 @@ namespace Pql.Engine.DataContainer.Engine
                     
                 case DbType.Int16:
                     {
-                        var result = new HashSet<Int16>();
+                        var result = new HashSet<short>();
                         for (var x = 0; x < itemCount; x++)
                         {
                             result.Add(reader.ReadInt16());
@@ -392,7 +386,7 @@ namespace Pql.Engine.DataContainer.Engine
                     
                 case DbType.UInt16:
                     {
-                        var result = new HashSet<UInt16>();
+                        var result = new HashSet<ushort>();
                         for (var x = 0; x < itemCount; x++)
                         {
                             result.Add(reader.ReadUInt16());
@@ -402,7 +396,7 @@ namespace Pql.Engine.DataContainer.Engine
                     
                 case DbType.Int32:
                     {
-                        var result = new HashSet<Int32>();
+                        var result = new HashSet<int>();
                         for (var x = 0; x < itemCount; x++)
                         {
                             result.Add(reader.ReadInt32());
@@ -412,7 +406,7 @@ namespace Pql.Engine.DataContainer.Engine
                     
                 case DbType.UInt32:
                     {
-                        var result = new HashSet<UInt32>();
+                        var result = new HashSet<uint>();
                         for (var x = 0; x < itemCount; x++)
                         {
                             result.Add(reader.ReadUInt32());
@@ -422,7 +416,7 @@ namespace Pql.Engine.DataContainer.Engine
                     
                 case DbType.Single:
                     {
-                        var result = new HashSet<Single>();
+                        var result = new HashSet<float>();
                         for (var x = 0; x < itemCount; x++)
                         {
                             result.Add(reader.ReadSingle());
@@ -453,7 +447,7 @@ namespace Pql.Engine.DataContainer.Engine
                     
                 case DbType.Int64:
                     {
-                        var result = new HashSet<Int64>();
+                        var result = new HashSet<long>();
                         for (var x = 0; x < itemCount; x++)
                         {
                             result.Add(reader.ReadInt64());
@@ -463,7 +457,7 @@ namespace Pql.Engine.DataContainer.Engine
                     
                 case DbType.UInt64:
                     {
-                        var result = new HashSet<UInt64>();
+                        var result = new HashSet<ulong>();
                         for (var x = 0; x < itemCount; x++)
                         {
                             result.Add(reader.ReadUInt64());
@@ -473,7 +467,7 @@ namespace Pql.Engine.DataContainer.Engine
                     
                 case DbType.Double:
                     {
-                        var result = new HashSet<Double>();
+                        var result = new HashSet<double>();
                         for (var x = 0; x < itemCount; x++)
                         {
                             result.Add(reader.ReadDouble());

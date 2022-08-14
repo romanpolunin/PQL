@@ -1,20 +1,18 @@
-﻿using System.Collections.Generic;
-using System.Runtime.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace Pql.Engine.Interfaces.Internal
+namespace Pql.SqlEngine.Interfaces.Internal
 {
-    [DataContract]
-    public class DataContainerStats
+    public class DataContainerStats: IJsonOnDeserialized
     {
-        [DataMember]
+        [JsonInclude]
         protected Dictionary<int, int> DocumentCounts;
 
         public DataContainerStats()
         {
-            OnDeserialized(new StreamingContext(StreamingContextStates.Other));
+            (this as IJsonOnDeserialized).OnDeserialized();
         }
 
-        private void OnDeserialized(StreamingContext streamingContext)
+        void IJsonOnDeserialized.OnDeserialized()
         {
             if (DocumentCounts == null)
             {
@@ -34,9 +32,6 @@ namespace Pql.Engine.Interfaces.Internal
             }
         }
 
-        public int TryGetDocumentCount(int documentType)
-        {
-            return DocumentCounts != null && DocumentCounts.TryGetValue(documentType, out var result) ? result : 0;
-        }
+        public int TryGetDocumentCount(int documentType) => DocumentCounts != null && DocumentCounts.TryGetValue(documentType, out var result) ? result : 0;
     }
 }

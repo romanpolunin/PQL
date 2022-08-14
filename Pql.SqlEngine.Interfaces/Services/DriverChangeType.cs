@@ -1,4 +1,4 @@
-﻿namespace Pql.Engine.Interfaces.Services
+﻿namespace Pql.SqlEngine.Interfaces.Services
 {
     /// <summary>
     /// Type of a single change record.
@@ -6,20 +6,16 @@
     public enum DriverChangeType
     {
         /// <summary>
-        /// Dummy default value.
-        /// </summary>
-        InvalidValue,
-        /// <summary>
         /// Insertion.
         /// </summary>
-        Insert,
+        Insert = 1,
         /// <summary>
         /// Update of an existing record.
         /// </summary>
-        Update,
+        Update = 2,
         /// <summary>
         /// Deletion of an existing record.
         /// </summary>
-        Delete
+        Delete = 3
     }
 }

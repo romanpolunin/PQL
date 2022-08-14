@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 using Grpc.Core;
 
@@ -24,11 +22,13 @@ namespace Pql.ClientDriver.Tests
             {
                 await responseStream.WriteAsync(new PqlResponseItem
                 {
-                    Header = new DataResponse { ErrorCode = 0 }
+                    Header = new DataResponse { ErrorCode = 0, ServerMessage = "pong" }
                 });
 
                 return;
             }
+
+            
         }
     }
 }

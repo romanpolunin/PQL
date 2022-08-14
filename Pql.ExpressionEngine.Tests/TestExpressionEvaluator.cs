@@ -22,10 +22,7 @@ namespace Pql.ExpressionEngine.UnitTest
         ExpressionEvaluatorRuntime _runtime;
 
         [TestInitialize]
-        public void TestInitialize()
-        {
-            _runtime = new ExpressionEvaluatorRuntime();
-        }
+        public void TestInitialize() => _runtime = new ExpressionEvaluatorRuntime();
 
         private static long s_elapsedMilliseconds;
         private static long s_totalOperations;
@@ -438,7 +435,7 @@ namespace Pql.ExpressionEngine.UnitTest
 
             watch.Stop();
 
-            Console.WriteLine(watch.ElapsedMilliseconds + ", " + (double)num * 1000 / watch.ElapsedMilliseconds);
+            Console.WriteLine(watch.ElapsedMilliseconds + ", " + ((double)num * 1000 / watch.ElapsedMilliseconds));
 
             // now demonstrate implicit access to context information
             _runtime.RegisterAtom(
@@ -1187,14 +1184,8 @@ namespace Pql.ExpressionEngine.UnitTest
             { Iterate(child, level + 1); }
         }
 
-        private TReturn Eval<TReturn>(string expression)
-        {
-            return ((Func<TReturn>)_runtime.Compile(expression, typeof(TReturn)))();
-        }
+        private TReturn Eval<TReturn>(string expression) => ((Func<TReturn>)_runtime.Compile(expression, typeof(TReturn)))();
 
-        private TReturn Eval<TContext, TReturn>(string expression, TContext ctx)
-        {
-            return _runtime.Compile<TContext, TReturn>(expression)(ctx);
-        }
+        private TReturn Eval<TContext, TReturn>(string expression, TContext ctx) => _runtime.Compile<TContext, TReturn>(expression)(ctx);
     }
 }

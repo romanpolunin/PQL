@@ -1,19 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
+﻿using System.Data;
 
-namespace Pql.Engine.Interfaces.Internal
+namespace Pql.SqlEngine.Interfaces.Internal
 {
     public class SchemaBuilder
     {
-        private DataContainerDescriptor m_descriptor;
-        private Dictionary<int, Dictionary<DbType, int>> m_fieldsMap;
-        private int m_lastFieldId;
+        private DataContainerDescriptor? _descriptor;
+        private Dictionary<int, Dictionary<DbType, int>> _fieldsMap;
+        private int _lastFieldId;
 
         public SchemaBuilder()
         {
-            m_descriptor = new DataContainerDescriptor();
+            _descriptor = new DataContainerDescriptor();
         }
 
         public void AddDocumentTypeNames(params string[] docTypeNames)
@@ -23,43 +20,40 @@ namespace Pql.Engine.Interfaces.Internal
                 throw new ArgumentNullException(nameof(docTypeNames));
             }
 
-            if (m_fieldsMap != null)
+            if (_fieldsMap != null)
             {
                 throw new InvalidOperationException("Cannot add document type names after BeginDefineDocumentTypes was called");
             }
 
-            if (m_descriptor == null)
+            if (_descriptor == null)
             {
                 throw new InvalidOperationException("Cannot add document type names after Commit was called");
             }
 
             foreach (var name in docTypeNames)
             {
-                m_descriptor.AddDocumentTypeName(name);
+                _descriptor.AddDocumentTypeName(name);
             }
         }
 
         public void BeginDefineDocumentTypes()
         {
-            if (m_fieldsMap != null)
+            if (_fieldsMap != null)
             {
                 throw new InvalidOperationException("Cannot invoke BeginDefineDocumentTypes more than once");
             }
 
-            if (m_descriptor == null)
+            if (_descriptor == null)
             {
                 throw new InvalidOperationException("Cannot define document types after Commit was called");
             } 
             
-            m_fieldsMap = InitializeFieldsMap(m_descriptor.EnumerateDocumentTypeNames());
+            _fieldsMap = InitializeFieldsMap(_descriptor.EnumerateDocumentTypeNames());
             
-            m_lastFieldId = 0;
+            _lastFieldId = 0;
         }
 
-        public DocumentTypeDescriptor AddDocumentTypeDescriptor(string docTypeName, string baseDatasetName, params object[] data)
-        {
-            return AddDocumentTypeDescriptorWithPrimaryKey(docTypeName, baseDatasetName, null, data);
-        }
+        public DocumentTypeDescriptor AddDocumentTypeDescriptor(string docTypeName, string baseDatasetName, params object[] data) => AddDocumentTypeDescriptorWithPrimaryKey(docTypeName, baseDatasetName, null, data);
 
         public DocumentTypeDescriptor AddDocumentTypeDescriptorWithPrimaryKey(string docTypeName, string baseDatasetName, string primaryKeyFieldName, params object[] data)
         {
@@ -78,30 +72,31 @@ namespace Pql.Engine.Interfaces.Internal
                 throw new ArgumentException("Invalid data array length: " + data.Length, nameof(data));
             }
 
-            if (m_fieldsMap == null)
+            if (_fieldsMap == null)
             {
                 throw new InvalidOperationException("Cannot invoke AddDocumentTypeDescriptor before BeginDefineDocumentTypes");
             }
 
-            if (m_descriptor == null)
+            if (_descriptor == null)
             {
                 throw new InvalidOperationException("Cannot invoke AddDocumentTypeDescriptor after Commit was called");
             }
 
-            var docType = m_descriptor.RequireDocumentTypeName(docTypeName);
+            var docType = _descriptor.RequireDocumentTypeName(docTypeName);
             
             var fields = new FieldMetadata[data.Length / 2];
             for (var i = 0; i < fields.Length; i++)
             {
-                fields[i] = new FieldMetadata(++m_lastFieldId, (string)data[i*2], (string)data[i*2], (DbType)data[i*2+1], docType);
+                fields[i] = new FieldMetadata(++_lastFieldId, (string)data[i*2], (string)data[i*2], (DbType)data[(i*2)+1], docType);
             }
 
             var result = new DocumentTypeDescriptor(docTypeName, baseDatasetName ?? docTypeName, docType, primaryKeyFieldName, fields.Select(x => x.FieldId).ToArray());
-            m_descriptor.AddDocumentTypeDescriptor(result);
+            _descriptor.AddDocumentTypeDescriptor(result);
             foreach (var field in fields)
             {
-                m_descriptor.AddField(field);
+                _descriptor.AddField(field);
             }
+
             return result;
         }
 
@@ -122,17 +117,17 @@ namespace Pql.Engine.Interfaces.Internal
                 throw new ArgumentException("Invalid data array length: " + data.Length, nameof(data));
             }
 
-            if (m_fieldsMap == null)
+            if (_fieldsMap == null)
             {
                 throw new InvalidOperationException("Cannot invoke AddJoinDescriptor before BeginDefineDocumentTypes");
             }
 
-            if (m_descriptor == null)
+            if (_descriptor == null)
             {
                 throw new InvalidOperationException("Cannot invoke AddJoinDescriptor after Commit was called");
             }
 
-            var docTypeDescriptor = m_descriptor.RequireDocumentType(docType);
+            var docTypeDescriptor = _descriptor.RequireDocumentType(docType);
 
             var joinPropertyNameToDocumentType = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             for (var i = 0; i < data.Length; i += 2)
@@ -146,7 +141,7 @@ namespace Pql.Engine.Interfaces.Internal
                     }
 
                     var propDocType = (int) data[i + 1];
-                    if (null == m_descriptor.TryGetDocTypeName(propDocType))
+                    if (null == _descriptor.TryGetDocTypeName(propDocType))
                     {
                         throw new ArgumentException("Unknown document type " + propDocType + " for property " + propName);
                     }
@@ -160,7 +155,7 @@ namespace Pql.Engine.Interfaces.Internal
             }
 
             var result = new JoinDescriptor(docTypeDescriptor.DocumentType, type, joinPropertyNameToDocumentType);
-            m_descriptor.AddJoinDescriptor(result);
+            _descriptor.AddJoinDescriptor(result);
             return result;
         }
 
@@ -171,7 +166,7 @@ namespace Pql.Engine.Interfaces.Internal
                 throw new ArgumentException("Invalid data array length: " + data.Length, nameof(data));
             }
 
-            if (m_descriptor == null)
+            if (_descriptor == null)
             {
                 throw new InvalidOperationException("Cannot invoke AddDocumentTypeDescriptor after Commit was called");
             }
@@ -196,19 +191,19 @@ namespace Pql.Engine.Interfaces.Internal
 
                 var mappedValue = mappedValueData.Split(splitters, StringSplitOptions.RemoveEmptyEntries);
 
-                m_descriptor.AddIdentifierAlias(docTypeName, new List<string>(alias), mappedValue);
+                _descriptor.AddIdentifierAlias(docTypeName, new List<string>(alias), mappedValue);
             }
         }
 
         public DataContainerDescriptor Commit()
         {
-            if (m_descriptor == null)
+            if (_descriptor == null)
             {
                 throw new InvalidOperationException("Cannot invoke Commit more than once");
             }
 
-            var result = m_descriptor;
-            m_descriptor = null;
+            var result = _descriptor;
+            _descriptor = null;
             return result;
         }
 

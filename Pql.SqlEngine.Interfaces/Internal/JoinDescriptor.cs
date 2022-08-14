@@ -1,38 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Runtime.Serialization;
+﻿using System.Reflection;
+using System.Text.Json.Serialization;
 
-namespace Pql.Engine.Interfaces.Internal
+namespace Pql.SqlEngine.Interfaces.Internal
 {
-    [DataContract]
-    public class JoinDescriptor
+    public class JoinDescriptor: IJsonOnDeserialized
     {
         static JoinDescriptor()
         {
-            FieldSetter = typeof(Dictionary<string, int>).GetField("comparer", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldSetter = typeof(Dictionary<string, int>).GetField("comparer", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?? throw new Exception("Failed to reflect: " + nameof(FieldSetter));
         }
 
         protected static readonly FieldInfo FieldSetter;
 
-        [DataMember(IsRequired = true, EmitDefaultValue = true)]
+        [JsonInclude]
         public readonly int DocumentType;
 
         /// <summary>
         /// Type information on the join class.
         /// </summary>
-        [NonSerialized]
+        [JsonIgnore]
         public readonly Type JoinClassType;
 
         /// <summary>
         /// Mapping of join property names to document types.
         /// </summary>
-        [DataMember(IsRequired = true, EmitDefaultValue = true)]
+        [JsonInclude]
         public Dictionary<string, int> JoinPropertyNameToDocumentType;
 
         public JoinDescriptor()
         {
-            OnDeserialized(new StreamingContext(StreamingContextStates.Other));
+            (this as IJsonOnDeserialized).OnDeserialized();
         }
 
         public JoinDescriptor(int documentType, Type classType, Dictionary<string, int> joinPropertyNameToDocumentType)
@@ -57,8 +55,7 @@ namespace Pql.Engine.Interfaces.Internal
             JoinPropertyNameToDocumentType = joinPropertyNameToDocumentType;
         }
 
-        [OnDeserialized]
-        protected void OnDeserialized(StreamingContext streamingContext)
+        void IJsonOnDeserialized.OnDeserialized()
         {
             if (JoinPropertyNameToDocumentType == null)
             {

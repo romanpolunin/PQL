@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Pql.ClientDriver.Protocol
+﻿namespace Pql.ClientDriver.Protocol
 {
     /// <summary>
     /// Utility to write PQL authentication information, including tenantId, userId etc.
@@ -11,10 +9,7 @@ namespace Pql.ClientDriver.Protocol
         /// <summary>
         /// Writes <see cref="IPqlClientSecurityContext"/> to semicolon-separated string.
         /// </summary>
-        public static string GetString(IPqlClientSecurityContext ctx)
-        {
-            return string.Format("{0};{1};{2};{3}", ctx.ContextId, ctx.ApplicationName, ctx.TenantId, ctx.UserId);
-        }
+        public static string GetString(IPqlClientSecurityContext ctx) => string.Format("{0};{1};{2};{3}", ctx.ContextId, ctx.ApplicationName, ctx.TenantId, ctx.UserId);
 
         /// <summary>
         /// Reads <see cref="IPqlClientSecurityContext"/> from a semicolon-separated string.

@@ -137,10 +137,7 @@ namespace Pql.ClientDriver.Protocol.Wire
         /// </summary>
         /// <param name="indexInResponse">Index of the field in the metadata</param>
         /// <returns>Internal name of the field</returns>
-        public string GetName(int indexInResponse)
-        {
-            return RequireField(indexInResponse).Name;
-        }
+        public string GetName(int indexInResponse) => RequireField(indexInResponse).Name;
 
         /// <summary>
         /// Reassembles the field-by-name lookup dictionary after deserialization.

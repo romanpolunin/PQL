@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -30,6 +29,7 @@ namespace Pql.ClientDriver.Tests
             Assert.IsTrue(await call.ResponseStream.MoveNext(System.Threading.CancellationToken.None));
             var response = call.ResponseStream.Current;
             Assert.AreEqual(0, response.Header.ErrorCode);
+            Assert.AreEqual("pong", response.Header.ServerMessage);
         }
     }
 }

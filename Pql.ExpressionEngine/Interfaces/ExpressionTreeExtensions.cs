@@ -918,10 +918,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// Generates a default expression of type Nullable(T), given its type.
         /// </summary>
-        public static Expression MakeNewNullable(Type nullabletype)
-        {
-            return nullabletype == null ? throw new ArgumentNullException(nameof(nullabletype)) : GetDefaultExpression(nullabletype);
-        }
+        public static Expression MakeNewNullable(Type nullabletype) => nullabletype == null ? throw new ArgumentNullException(nameof(nullabletype)) : GetDefaultExpression(nullabletype);
 
         private static bool TryAdjustNumericType(ParseTreeNode? root, Expression expr, Type targetType, out Expression? adjusted)
         {

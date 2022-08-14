@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace Pql.ExpressionEngine.Interfaces
 {
@@ -224,10 +223,7 @@ namespace Pql.ExpressionEngine.Interfaces
         /// Verifies consistency.
         /// </summary>
         [Conditional("DEBUG")]
-        protected void AssertState()
-        {
-            Debug.Assert((Data == null && Length == 0) || (Data != null && Data.Length >= Length));
-        }
+        protected void AssertState() => Debug.Assert((Data == null && Length == 0) || (Data != null && Data.Length >= Length));
 
         /// <summary>
         /// Default comparer for byte arrays.

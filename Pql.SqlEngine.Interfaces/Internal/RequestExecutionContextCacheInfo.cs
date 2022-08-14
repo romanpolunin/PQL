@@ -1,7 +1,6 @@
-﻿using System;
-using Pql.ClientDriver.Protocol;
+﻿using Pql.Server.Protocol.Wire;
 
-namespace Pql.Engine.Interfaces.Internal
+namespace Pql.SqlEngine.Interfaces.Internal
 {
     public class RequestExecutionContextCacheInfo
     {

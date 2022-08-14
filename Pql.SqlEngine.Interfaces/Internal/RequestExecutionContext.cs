@@ -1,12 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using Pql.ClientDriver;
-using Pql.ClientDriver.Protocol;
-using Pql.ClientDriver.Wcf;
-using Pql.Engine.Interfaces.Services;
+﻿using Pql.Server.Protocol.Wire;
+using Pql.SqlEngine.Interfaces.Services;
 
-namespace Pql.Engine.Interfaces.Internal
+namespace Pql.SqlEngine.Interfaces.Internal
 {
     public sealed class RequestExecutionContext : IDisposable
     {
@@ -80,20 +75,11 @@ namespace Pql.Engine.Interfaces.Internal
                 };
         }
 
-        public void AttachResponseHeaders(DataResponse headers)
-        {
-            ResponseHeaders = headers ?? throw new ArgumentNullException(nameof(headers));
-        }
+        public void AttachResponseHeaders(DataResponse headers) => ResponseHeaders = headers ?? throw new ArgumentNullException(nameof(headers));
 
-        public void AttachContainerDescriptor(DataContainerDescriptor containerDescriptor)
-        {
-            ContainerDescriptor = containerDescriptor ?? throw new ArgumentNullException(nameof(containerDescriptor));
-        }
+        public void AttachContainerDescriptor(DataContainerDescriptor containerDescriptor) => ContainerDescriptor = containerDescriptor ?? throw new ArgumentNullException(nameof(containerDescriptor));
 
-        public void AttachCachedInfo(RequestExecutionContextCacheInfo cacheInfo)
-        {
-            CacheInfo = cacheInfo ?? throw new ArgumentNullException(nameof(cacheInfo));
-        }
+        public void AttachCachedInfo(RequestExecutionContextCacheInfo cacheInfo) => CacheInfo = cacheInfo ?? throw new ArgumentNullException(nameof(cacheInfo));
 
         public void AttachInputMessage(PqlMessage requestMessage, IDataEngine engine, IPqlClientSecurityContext authContext)
         {
@@ -153,10 +139,7 @@ namespace Pql.Engine.Interfaces.Internal
             OutputDataBuffer = null;
         }
 
-        public void PrepareChangeBufferForInsert()
-        {
-            PrepareBuffersForUpdate();
-        }
+        public void PrepareChangeBufferForInsert() => PrepareBuffersForUpdate();
 
         public void PrepareBuffersForDelete()
         {
@@ -293,15 +276,9 @@ namespace Pql.Engine.Interfaces.Internal
             Cleanup();
         }
 
-        public void TrySetLastError(Exception exception)
-        {
-            Interlocked.CompareExchange(ref _lastError, exception, null);
-        }
+        public void TrySetLastError(Exception exception) => Interlocked.CompareExchange(ref _lastError, exception, null);
 
-        public void AttachRequestCompletion()
-        {
-            Completion = new RequestCompletion(this);
-        }
+        public void AttachRequestCompletion() => Completion = new RequestCompletion(this);
 
         public class RequestCompletion : IDisposable
         {
@@ -321,10 +298,7 @@ namespace Pql.Engine.Interfaces.Internal
                 }
             }
 
-            public void Discard()
-            {
-                Interlocked.CompareExchange(ref _executionContext, null, _executionContext);
-            }
+            public void Discard() => Interlocked.CompareExchange(ref _executionContext, null, _executionContext);
         }
 
     }

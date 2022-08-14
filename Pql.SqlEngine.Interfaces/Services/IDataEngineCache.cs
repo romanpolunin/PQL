@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Pql.Engine.Interfaces.Services
+﻿namespace Pql.SqlEngine.Interfaces.Services
 {
     public interface IDataEngineCache : IDisposable
     {

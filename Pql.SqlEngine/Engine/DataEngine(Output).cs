@@ -1,12 +1,11 @@
-﻿using System;
-using System.Data;
-using System.IO;
-using Pql.ClientDriver.Protocol;
-using Pql.Engine.Interfaces.Internal;
-using Pql.Engine.Interfaces.Services;
-using Pql.ExpressionEngine.Interfaces;
+﻿using System.Data;
 
-namespace Pql.Engine.DataContainer.Engine
+using Pql.ExpressionEngine.Interfaces;
+using Pql.SqlEngine.Interfaces;
+using Pql.SqlEngine.Interfaces.Internal;
+using Pql.SqlEngine.Interfaces.Services;
+
+namespace Pql.SqlEngine.DataContainer.Engine
 {
     public sealed partial class DataEngine
     {
@@ -14,7 +13,7 @@ namespace Pql.Engine.DataContainer.Engine
             RequestExecutionContext context, RequestExecutionBuffer buffer, IDriverDataEnumerator sourceEnumerator, bool havePendingDriverRow)
         {
             // have to check for disposal here, because this method gets invoked in a loop
-            if (m_disposed)
+            if (_disposed)
             {
                 buffer.Error = new ObjectDisposedException("This data engine has been disposed");
                 return false;
@@ -42,7 +41,7 @@ namespace Pql.Engine.DataContainer.Engine
             var pagingOffset = func is null ? 0 : func(context.ParsedRequest.Params.InputValues);
 
             func = context.ParsedRequest.BaseDataset.Paging.PageSize;
-            var pageSize = func is null ? Int32.MaxValue : func(context.ParsedRequest.Params.InputValues);
+            var pageSize = func is null ? int.MaxValue : func(context.ParsedRequest.Params.InputValues);
 
             // one row might not have fit into previous buffer, let's write it now
             if (havePendingDriverRow)
@@ -169,7 +168,7 @@ namespace Pql.Engine.DataContainer.Engine
                                 }
 
                                 BitVector.Set(output.NotNulls, ordinal);
-                                outputSize += sizeof(int) + value.Length * sizeof(char);
+                                outputSize += sizeof(int) + (value.Length * sizeof(char));
                             }
                         }
                         break;
@@ -194,7 +193,7 @@ namespace Pql.Engine.DataContainer.Engine
                         {
                             if (isNullable)
                             {
-                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<Byte>>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<byte>>)compiledExpression)(ctx);
                                 if (value.HasValue)
                                 {
                                     output.ValueData8Bytes[indexInArray].AsByte = value.Value;
@@ -204,7 +203,7 @@ namespace Pql.Engine.DataContainer.Engine
                             }
                             else
                             {
-                                var value = ((Func<ClauseEvaluationContext, Byte>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, byte>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsByte = value;
                                 BitVector.Set(output.NotNulls, ordinal);
                                 outputSize++;
@@ -215,7 +214,7 @@ namespace Pql.Engine.DataContainer.Engine
                         {
                             if (isNullable)
                             {
-                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<Boolean>>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<bool>>)compiledExpression)(ctx);
                                 if (value.HasValue)
                                 {
                                     output.ValueData8Bytes[indexInArray].AsBoolean = value.Value;
@@ -225,7 +224,7 @@ namespace Pql.Engine.DataContainer.Engine
                             }
                             else
                             {
-                                var value = ((Func<ClauseEvaluationContext, Boolean>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, bool>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsBoolean = value;
                                 BitVector.Set(output.NotNulls, ordinal);
                                 outputSize++;
@@ -237,20 +236,20 @@ namespace Pql.Engine.DataContainer.Engine
                         {
                             if (isNullable)
                             {
-                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<Decimal>>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<decimal>>)compiledExpression)(ctx);
                                 if (value.HasValue)
                                 {
                                     output.ValueData16Bytes[indexInArray].AsDecimal = value.Value;
                                     BitVector.Set(output.NotNulls, ordinal);
-                                    outputSize += sizeof(Decimal);
+                                    outputSize += sizeof(decimal);
                                 }
                             }
                             else
                             {
-                                var value = ((Func<ClauseEvaluationContext, Decimal>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, decimal>)compiledExpression)(ctx);
                                 output.ValueData16Bytes[indexInArray].AsDecimal = value;
                                 BitVector.Set(output.NotNulls, ordinal);
-                                outputSize += sizeof(Decimal);
+                                outputSize += sizeof(decimal);
                             }
                         }
                         break;
@@ -265,7 +264,7 @@ namespace Pql.Engine.DataContainer.Engine
                                 {
                                     output.ValueData8Bytes[indexInArray].AsDateTime = value.Value;
                                     BitVector.Set(output.NotNulls, ordinal);
-                                    outputSize += sizeof(Int64);
+                                    outputSize += sizeof(long);
                                 }
                             }
                             else
@@ -273,7 +272,7 @@ namespace Pql.Engine.DataContainer.Engine
                                 var value = ((Func<ClauseEvaluationContext, DateTime>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsDateTime = value;
                                 BitVector.Set(output.NotNulls, ordinal);
-                                outputSize += sizeof(Int64);
+                                outputSize += sizeof(long);
                             }
                         }
                         break;
@@ -286,7 +285,7 @@ namespace Pql.Engine.DataContainer.Engine
                                 {
                                     output.ValueData8Bytes[indexInArray].AsTimeSpan = value.Value;
                                     BitVector.Set(output.NotNulls, ordinal);
-                                    outputSize += sizeof(Int64);
+                                    outputSize += sizeof(long);
                                 }
                             }
                             else
@@ -294,7 +293,7 @@ namespace Pql.Engine.DataContainer.Engine
                                 var value = ((Func<ClauseEvaluationContext, TimeSpan>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsTimeSpan = value;
                                 BitVector.Set(output.NotNulls, ordinal);
-                                outputSize += sizeof(Int64);
+                                outputSize += sizeof(long);
                             }
                         }
                         break;
@@ -302,20 +301,20 @@ namespace Pql.Engine.DataContainer.Engine
                         {
                             if (isNullable)
                             {
-                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<Double>>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<double>>)compiledExpression)(ctx);
                                 if (value.HasValue)
                                 {
                                     output.ValueData8Bytes[indexInArray].AsDouble = value.Value;
                                     BitVector.Set(output.NotNulls, ordinal);
-                                    outputSize += sizeof(Double);
+                                    outputSize += sizeof(double);
                                 }
                             }
                             else
                             {
-                                var value = ((Func<ClauseEvaluationContext, Double>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, double>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsDouble = value;
                                 BitVector.Set(output.NotNulls, ordinal);
-                                outputSize += sizeof(Double);
+                                outputSize += sizeof(double);
                             }
                         }
                         break;
@@ -344,20 +343,20 @@ namespace Pql.Engine.DataContainer.Engine
                         {
                             if (isNullable)
                             {
-                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<Int16>>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<short>>)compiledExpression)(ctx);
                                 if (value.HasValue)
                                 {
                                     output.ValueData8Bytes[indexInArray].AsInt16 = value.Value;
                                     BitVector.Set(output.NotNulls, ordinal);
-                                    outputSize += sizeof(Int16);
+                                    outputSize += sizeof(short);
                                 }
                             }
                             else
                             {
-                                var value = ((Func<ClauseEvaluationContext, Int16>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, short>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsInt16 = value;
                                 BitVector.Set(output.NotNulls, ordinal);
-                                outputSize += sizeof(Int16);
+                                outputSize += sizeof(short);
                             }
                         }
                         break;
@@ -365,20 +364,20 @@ namespace Pql.Engine.DataContainer.Engine
                         {
                             if (isNullable)
                             {
-                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<Int32>>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<int>>)compiledExpression)(ctx);
                                 if (value.HasValue)
                                 {
                                     output.ValueData8Bytes[indexInArray].AsInt32 = value.Value;
                                     BitVector.Set(output.NotNulls, ordinal);
-                                    outputSize += sizeof(Int32);
+                                    outputSize += sizeof(int);
                                 }
                             }
                             else
                             {
-                                var value = ((Func<ClauseEvaluationContext, Int32>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, int>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsInt32 = value;
                                 BitVector.Set(output.NotNulls, ordinal);
-                                outputSize += sizeof(Int32);
+                                outputSize += sizeof(int);
                             }
                         }
                         break;
@@ -386,20 +385,20 @@ namespace Pql.Engine.DataContainer.Engine
                         {
                             if (isNullable)
                             {
-                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<Int64>>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<long>>)compiledExpression)(ctx);
                                 if (value.HasValue)
                                 {
                                     output.ValueData8Bytes[indexInArray].AsInt64 = value.Value;
                                     BitVector.Set(output.NotNulls, ordinal);
-                                    outputSize += sizeof(Int64);
+                                    outputSize += sizeof(long);
                                 }
                             }
                             else
                             {
-                                var value = ((Func<ClauseEvaluationContext, Int64>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, long>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsInt64 = value;
                                 BitVector.Set(output.NotNulls, ordinal);
-                                outputSize += sizeof(Int64);
+                                outputSize += sizeof(long);
                             }
                         }
                         break;
@@ -407,7 +406,7 @@ namespace Pql.Engine.DataContainer.Engine
                         {
                             if (isNullable)
                             {
-                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<SByte>>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<sbyte>>)compiledExpression)(ctx);
                                 if (value.HasValue)
                                 {
                                     output.ValueData8Bytes[indexInArray].AsSByte = value.Value;
@@ -417,7 +416,7 @@ namespace Pql.Engine.DataContainer.Engine
                             }
                             else
                             {
-                                var value = ((Func<ClauseEvaluationContext, SByte>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, sbyte>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsSByte = value;
                                 BitVector.Set(output.NotNulls, ordinal);
                                 outputSize++;
@@ -428,20 +427,20 @@ namespace Pql.Engine.DataContainer.Engine
                         {
                             if (isNullable)
                             {
-                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<Single>>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<float>>)compiledExpression)(ctx);
                                 if (value.HasValue)
                                 {
                                     output.ValueData8Bytes[indexInArray].AsSingle = value.Value;
                                     BitVector.Set(output.NotNulls, ordinal);
-                                    outputSize += sizeof(Single);
+                                    outputSize += sizeof(float);
                                 }
                             }
                             else
                             {
-                                var value = ((Func<ClauseEvaluationContext, Single>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, float>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsSingle = value;
                                 BitVector.Set(output.NotNulls, ordinal);
-                                outputSize += sizeof(Single);
+                                outputSize += sizeof(float);
                             }
                         }
                         break;
@@ -449,20 +448,20 @@ namespace Pql.Engine.DataContainer.Engine
                         {
                             if (isNullable)
                             {
-                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<UInt16>>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<ushort>>)compiledExpression)(ctx);
                                 if (value.HasValue)
                                 {
                                     output.ValueData8Bytes[indexInArray].AsUInt16 = value.Value;
                                     BitVector.Set(output.NotNulls, ordinal);
-                                    outputSize += sizeof(UInt16);
+                                    outputSize += sizeof(ushort);
                                 }
                             }
                             else
                             {
-                                var value = ((Func<ClauseEvaluationContext, UInt16>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, ushort>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsUInt16 = value;
                                 BitVector.Set(output.NotNulls, ordinal);
-                                outputSize += sizeof(UInt16);
+                                outputSize += sizeof(ushort);
                             }
                         }
                         break;
@@ -470,20 +469,20 @@ namespace Pql.Engine.DataContainer.Engine
                         {
                             if (isNullable)
                             {
-                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<UInt32>>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<uint>>)compiledExpression)(ctx);
                                 if (value.HasValue)
                                 {
                                     output.ValueData8Bytes[indexInArray].AsUInt32 = value.Value;
                                     BitVector.Set(output.NotNulls, ordinal);
-                                    outputSize += sizeof(UInt32);
+                                    outputSize += sizeof(uint);
                                 }
                             }
                             else
                             {
-                                var value = ((Func<ClauseEvaluationContext, UInt32>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, uint>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsUInt32 = value;
                                 BitVector.Set(output.NotNulls, ordinal);
-                                outputSize += sizeof(UInt32);
+                                outputSize += sizeof(uint);
                             }
                         }
                         break;
@@ -491,20 +490,20 @@ namespace Pql.Engine.DataContainer.Engine
                         {
                             if (isNullable)
                             {
-                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<UInt64>>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, UnboxableNullable<ulong>>)compiledExpression)(ctx);
                                 if (value.HasValue)
                                 {
                                     output.ValueData8Bytes[indexInArray].AsUInt64 = value.Value;
                                     BitVector.Set(output.NotNulls, ordinal);
-                                    outputSize += sizeof(UInt64);
+                                    outputSize += sizeof(ulong);
                                 }
                             }
                             else
                             {
-                                var value = ((Func<ClauseEvaluationContext, UInt64>)compiledExpression)(ctx);
+                                var value = ((Func<ClauseEvaluationContext, ulong>)compiledExpression)(ctx);
                                 output.ValueData8Bytes[indexInArray].AsUInt64 = value;
                                 BitVector.Set(output.NotNulls, ordinal);
-                                outputSize += sizeof(UInt64);
+                                outputSize += sizeof(ulong);
                             }
                         }
                         break;

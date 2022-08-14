@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Pql.ExpressionEngine.Interfaces
+﻿namespace Pql.ExpressionEngine.Interfaces
 {
     /// <summary>
     /// Replaces .NET nullable. 
@@ -32,11 +30,8 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// Returns value or default(T) if value is not set.
         /// </summary>
-        
-        public T GetValueOrDefault()
-        {
-            return HasValue ? Value : default;
-        }
+
+        public T GetValueOrDefault() => HasValue ? Value : default;
 
         /// <summary>
         /// Indicates whether this instance and a specified object are equal.
@@ -64,15 +59,12 @@ namespace Pql.ExpressionEngine.Interfaces
         /// A 32-bit signed integer that is the hash code for this instance.
         /// </returns>
         /// <filterpriority>2</filterpriority>
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
+        public override int GetHashCode() => base.GetHashCode();
 
         /// <summary>
         /// Overloaded equality comparison.
         /// </summary>
-        
+
         public static bool operator ==(UnboxableNullable<T> x, UnboxableNullable<T> y)
         {
             return x.HasValue

@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
+﻿using System.Data;
 using System.Linq.Expressions;
-using Irony.Parsing;
-using Pql.ClientDriver;
-using Pql.Engine.Interfaces.Services;
 
-namespace Pql.Engine.Interfaces.Internal
+using Irony.Parsing;
+
+using Pql.SqlEngine.Interfaces.Services;
+
+namespace Pql.SqlEngine.Interfaces.Internal
 {
     public class ClauseEvaluationContext
     {
@@ -14,12 +13,12 @@ namespace Pql.Engine.Interfaces.Internal
         /// Zero-based number of current row, counts all records that come from storage driver, AFTER sorting.
         /// Is not affected by filtering and paging. Exposed in PQL via "rownum()" function.
         /// </summary>
-        public Int64 RowNumber;
+        public long RowNumber;
         /// <summary>
         /// Zero-based number of current row in a page, counts all records that are output to client AFTER sorting, filtering and paging.
         /// Exposed in PQL via "rownumoutput()" function.
         /// </summary>
-        public Int64 RowNumberInOutput;
+        public long RowNumberInOutput;
         /// <summary>
         /// Input field values.
         /// </summary>
@@ -264,10 +263,7 @@ namespace Pql.Engine.Interfaces.Internal
             public object[] InputCollections;
             public int[] OrdinalToLocalOrdinal;
 
-            public static ParametersData Create()
-            {
-                return new ParametersData();
-            }
+            public static ParametersData Create() => new ParametersData();
         }
 
         public struct SpecialCommandData
@@ -281,10 +277,7 @@ namespace Pql.Engine.Interfaces.Internal
             public bool IsSpecialCommand;
             public SpecialCommandType CommandType;
 
-            public static SpecialCommandData Create()
-            {
-                return new SpecialCommandData();
-            }
+            public static SpecialCommandData Create() => new SpecialCommandData();
         }
 
         public struct BaseDatasetData
@@ -345,11 +338,11 @@ namespace Pql.Engine.Interfaces.Internal
 
         public struct PagingOptions
         {
-            public static readonly Func<DriverRowData, int> DefaultPagingPageSizeFunc = x => Int32.MaxValue;
+            public static readonly Func<DriverRowData, int> DefaultPagingPageSizeFunc = x => int.MaxValue;
             public static readonly Func<DriverRowData, int> DefaultPagingOffsetFunc = x => 0;
 
-            public Func<DriverRowData, Int32> PageSize;
-            public Func<DriverRowData, Int32> Offset;
+            public Func<DriverRowData, int> PageSize;
+            public Func<DriverRowData, int> Offset;
         }
         #endregion
     }

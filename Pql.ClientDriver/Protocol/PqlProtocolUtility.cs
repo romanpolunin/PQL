@@ -17,10 +17,7 @@ namespace Pql.ClientDriver.Protocol
         /// <summary>
         /// Reads <see cref="DataResponse"/> from input stream referenced by <see cref="InputStream"/>.
         /// </summary>
-        public Task<DataResponse> ReadResponse()
-        {
-            return ReadResponseHeaders(PqlCall);
-        }
+        public Task<DataResponse> ReadResponse() => ReadResponseHeaders(PqlCall);
 
         public static async Task<DataResponse> ReadResponseHeaders(AsyncDuplexStreamingCall<PqlRequestItem, PqlResponseItem> streamingCall)
         {

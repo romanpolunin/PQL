@@ -28,19 +28,10 @@ namespace Pql.ExpressionEngine.UnitTest
         public Func<int, int> UnaryFunc = x => x;
         public Func<int, int, int> BinaryFunc = (x, y) => x + y;
 
-        public Int64 MyAtomFunc()
-        {
-            return Int64Field1;
-        }
+        public long MyAtomFunc() => Int64Field1;
 
-        public Int64 MyUnaryFunc(Int64 x)
-        {
-            return x;
-        }
+        public long MyUnaryFunc(long x) => x;
 
-        public Int64 MyBinaryFunc(Int64 x, Int64 y)
-        {
-            return x + y;
-        }
+        public long MyBinaryFunc(long x, long y) => x + y;
     }
 }

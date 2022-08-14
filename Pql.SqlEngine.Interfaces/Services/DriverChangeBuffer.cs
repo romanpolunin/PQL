@@ -1,7 +1,6 @@
-﻿using System.Linq;
-using Pql.Engine.Interfaces.Internal;
+﻿using Pql.SqlEngine.Interfaces.Internal;
 
-namespace Pql.Engine.Interfaces.Services
+namespace Pql.SqlEngine.Interfaces.Services
 {
     /// <summary>
     /// Holds information about changed fields.
@@ -17,12 +16,12 @@ namespace Pql.Engine.Interfaces.Services
         /// Fields metadata, same order as in <see cref="Data"/>.
         /// Not used for deletes.
         /// </summary>
-        public readonly FieldMetadata[] Fields;
+        public readonly FieldMetadata[]? Fields;
         /// <summary>
         /// Values holder, same ordinals order as in <see cref="Fields"/>.
         /// Not used for deletes.
         /// </summary>
-        public readonly DriverRowData Data;
+        public readonly DriverRowData? Data;
 
         /// <summary>
         /// Type of the change.
@@ -32,7 +31,7 @@ namespace Pql.Engine.Interfaces.Services
         /// <summary>
         /// Identifier of the entity to be updated or deleted when this buffer is passed to storage driver.
         /// </summary>
-        public byte[] InternalEntityId;
+        public byte[]? InternalEntityId;
 
         /// <summary>
         /// Ordinal of the value of primary key inside <see cref="Data"/>.

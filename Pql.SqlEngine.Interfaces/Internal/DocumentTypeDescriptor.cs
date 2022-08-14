@@ -1,33 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace Pql.Engine.Interfaces.Internal
+namespace Pql.SqlEngine.Interfaces.Internal
 {
-    [DataContract]
-    public class DocumentTypeDescriptor
+    public class DocumentTypeDescriptor: IJsonOnDeserialized, IJsonOnSerializing
     {
-        [DataMember(IsRequired = true, EmitDefaultValue = true)]
+        [JsonInclude]
         public readonly string Name;
 
-        [DataMember(IsRequired = true, EmitDefaultValue = true)]
+        [JsonInclude]
         public readonly string BaseDatasetName;
 
-        [DataMember(IsRequired = false, EmitDefaultValue = true)]
-        public readonly string PrimaryKeyFieldName;
+        [JsonInclude]
+        public readonly string? PrimaryKeyFieldName;
 
-        [DataMember(IsRequired = true, EmitDefaultValue = true)]
+        [JsonInclude]
         public readonly int DocumentType;
 
-        [DataMember(IsRequired = true, EmitDefaultValue = true)]
+        [JsonInclude]
         public readonly int[] Fields;
 
-        [DataMember(IsRequired = false, EmitDefaultValue = true)]
-        private Tuple<string[], string[]>[] m_identifierAliasesData;
+        [JsonInclude]
+        private Tuple<string[], string[]>[]? _identifierAliasesData;
 
-        [IgnoreDataMember]
-        private Dictionary<List<string>, string[]> m_identifierAliases;
+        private Dictionary<List<string>, string[]> _identifierAliases;
 
         private DocumentTypeDescriptor()
         {
@@ -36,7 +31,7 @@ namespace Pql.Engine.Interfaces.Internal
         public DocumentTypeDescriptor(string name, string baseDatasetName, int docType, int[] fields) 
         : this(name, baseDatasetName, docType, null, fields) {}
 
-        public DocumentTypeDescriptor(string name, string baseDatasetName, int docType, string primaryKeyFieldName, int[] fields)
+        public DocumentTypeDescriptor(string name, string baseDatasetName, int docType, string? primaryKeyFieldName, int[] fields)
         {
             Name = name;
             BaseDatasetName = baseDatasetName;
@@ -44,33 +39,23 @@ namespace Pql.Engine.Interfaces.Internal
             Fields = (int[])fields.Clone();
             PrimaryKeyFieldName = primaryKeyFieldName;
 
-            OnDeserialized(new StreamingContext(StreamingContextStates.Other));
+            (this as IJsonOnDeserialized).OnDeserialized();
         }
 
-        [IgnoreDataMember]
-        public int FieldCount
+        [JsonIgnore]
+        public int FieldCount => Fields.Length;
+
+        public bool TryGetIdentifierAlias(List<string> alias, out string[] mapped) => _identifierAliases.TryGetValue(alias, out mapped);
+
+        void IJsonOnSerializing.OnSerializing()
         {
-            get { return Fields.Length; }
+            _identifierAliasesData =
+                _identifierAliases.Select(x => new Tuple<string[], string[]>(x.Key.ToArray(), x.Value)).ToArray();
         }
 
-        public bool TryGetIdentifierAlias(List<string> alias, out string[] mapped)
+        void IJsonOnDeserialized.OnDeserialized()
         {
-            return m_identifierAliases.TryGetValue(alias, out mapped);
-        }
-
-        [OnSerializing]
-        protected void OnSerializing(StreamingContext streamingContext)
-        {
-            m_identifierAliasesData =
-                m_identifierAliases == null
-                    ? null
-                    : m_identifierAliases.Select(x => new Tuple<string[], string[]>(x.Key.ToArray(), x.Value)).ToArray();
-        }
-
-        [OnDeserialized]
-        protected void OnDeserialized(StreamingContext streamingContext)
-        {
-            if (String.IsNullOrEmpty(Name))
+            if (string.IsNullOrEmpty(Name))
             {
                 throw new InvalidOperationException("Name was deserialized as empty value");
             }
@@ -90,17 +75,17 @@ namespace Pql.Engine.Interfaces.Internal
                 throw new InvalidOperationException("Fields were deserialized as null array");
             }
 
-            m_identifierAliases = new Dictionary<List<string>, string[]>(new IdentifierAliasComparer());
+            _identifierAliases = new Dictionary<List<string>, string[]>(new IdentifierAliasComparer());
 
-            if (m_identifierAliasesData != null)
+            if (_identifierAliasesData != null)
             {
-                foreach (var tuple in m_identifierAliasesData)
+                foreach (var tuple in _identifierAliasesData)
                 {
-                    m_identifierAliases.Add(new List<string>(tuple.Item1), tuple.Item2);
+                    _identifierAliases.Add(new List<string>(tuple.Item1), tuple.Item2);
                 }
 
                 // now discard serialization data
-                m_identifierAliasesData = null;
+                _identifierAliasesData = null;
             }
         }
 
@@ -116,17 +101,17 @@ namespace Pql.Engine.Interfaces.Internal
                 throw new ArgumentException("Mapped must be not-null and have at least one part", nameof(mapped));
             }
 
-            if (m_identifierAliases.ContainsKey(alias))
+            if (_identifierAliases.ContainsKey(alias))
             {
                 throw new ArgumentException("Duplicate alias", nameof(alias));
             }
 
-            m_identifierAliases.Add(alias, mapped);
+            _identifierAliases.Add(alias, mapped);
         }
 
         public IEnumerable<Tuple<IReadOnlyList<string>, IReadOnlyCollection<string>>> EnumerateIdentiferAliases()
         {
-            foreach (var pair in m_identifierAliases)
+            foreach (var pair in _identifierAliases)
             {
                 yield return new Tuple<IReadOnlyList<string>, IReadOnlyCollection<string>>(pair.Key, pair.Value);
             }
@@ -134,9 +119,9 @@ namespace Pql.Engine.Interfaces.Internal
 
         public class IdentifierAliasComparer : IEqualityComparer<List<string>>
         {
-            private static readonly StringComparer Comparer = StringComparer.OrdinalIgnoreCase;
+            private static readonly StringComparer s_comparer = StringComparer.OrdinalIgnoreCase;
 
-            public bool Equals(List<string> x, List<string> y)
+            public bool Equals(List<string>? x, List<string>? y)
             {
                 if (ReferenceEquals(x, y))
                 {
@@ -150,7 +135,7 @@ namespace Pql.Engine.Interfaces.Internal
 
                 for (var i = 0; i < x.Count; i++)
                 {
-                    if (!Comparer.Equals(x[i], y[i]))
+                    if (!s_comparer.Equals(x[i], y[i]))
                     {
                         return false;
                     }
@@ -169,7 +154,7 @@ namespace Pql.Engine.Interfaces.Internal
                 int result = 0;
                 foreach (var x in obj)
                 {
-                    result = result * 31 + Comparer.GetHashCode(x);
+                    result = (result * 31) + s_comparer.GetHashCode(x);
                 }
 
                 return result;

@@ -1,25 +1,20 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Configuration;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Pql.Engine.Interfaces;
-using Pql.Engine.Interfaces.Internal;
-using Pql.Engine.Interfaces.Services;
-using StructureMap;
+﻿using System.Collections.Concurrent;
 
-namespace Pql.Engine.DataContainer.Engine
+using Pql.SqlEngine.Interfaces;
+using Pql.SqlEngine.Interfaces.Internal;
+using Pql.SqlEngine.Interfaces.Services;
+
+namespace Pql.SqlEngine.DataContainer.Engine
 {
     public sealed class DataEngineCache : IDataEngineCache
     {
-        private readonly IContainer m_container;
-        private readonly ITracer m_tracer;
-        private volatile ConcurrentDictionary<string, ConcurrentDictionary<string, IDataEngine>> m_engines;
-        private readonly string m_instanceName;
-        private readonly int m_maxEngineConcurrency;
-        private readonly string m_storageDriverKey;
-        private Timer m_timer;
+        private readonly IContainer _container;
+        private readonly ITracer _tracer;
+        private volatile ConcurrentDictionary<string, ConcurrentDictionary<string, IDataEngine>> _engines;
+        private readonly string _instanceName;
+        private readonly int _maxEngineConcurrency;
+        private readonly string _storageDriverKey;
+        private Timer _timer;
 
         public DataEngineCache(IContainer container, ITracer tracer, string instanceName, int maxEngineConcurrency)
         {
@@ -28,46 +23,46 @@ namespace Pql.Engine.DataContainer.Engine
                 throw new ArgumentNullException(nameof(instanceName));
             }
 
-            if (maxEngineConcurrency <= 0 || maxEngineConcurrency > 10000)
+            if (maxEngineConcurrency is <= 0 or > 10000)
             {
                 throw new ArgumentOutOfRangeException(nameof(maxEngineConcurrency));
             }
 
-            m_container = container ?? throw new ArgumentNullException(nameof(container));
-            m_tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
-            m_instanceName = instanceName;
-            m_maxEngineConcurrency = maxEngineConcurrency;
+            _container = container ?? throw new ArgumentNullException(nameof(container));
+            _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
+            _instanceName = instanceName;
+            _maxEngineConcurrency = maxEngineConcurrency;
 
-            m_storageDriverKey = ConfigurationManager.AppSettings["storageDriverKey"];
+            _storageDriverKey = ConfigurationManager.AppSettings["storageDriverKey"];
             
-            if (string.IsNullOrEmpty(m_storageDriverKey))
+            if (string.IsNullOrEmpty(_storageDriverKey))
             {
                 throw new InvalidOperationException("appSetting value for key 'storageDriverKey' is not set");
             }
 
-            if (null == m_container.TryGetInstance<IStorageDriverFactory>(m_storageDriverKey))
+            if (null == _container.TryGetInstance<IStorageDriverFactory>(_storageDriverKey))
             {
-                throw new ArgumentException("Container does not have a factory for storage driver " + m_storageDriverKey);
+                throw new ArgumentException("Container does not have a factory for storage driver " + _storageDriverKey);
             }
 
-            m_engines = new ConcurrentDictionary<string, ConcurrentDictionary<string, IDataEngine>>();
-            m_timer = new Timer(OnTimerCallback, this, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+            _engines = new ConcurrentDictionary<string, ConcurrentDictionary<string, IDataEngine>>();
+            _timer = new Timer(OnTimerCallback, this, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
         }
 
         public int GetTotalEnginesCount()
         {
-            return m_engines.Sum(x => x.Value.Values.Count);
+            return _engines.Sum(x => x.Value.Values.Count);
         }
 
         public void Dispose()
         {
-            var timer = Interlocked.CompareExchange(ref m_timer, null, m_timer);
+            var timer = Interlocked.CompareExchange(ref _timer, null, _timer);
             if (timer != null)
             {
                 timer.Dispose();
             }
 
-            var temp = Interlocked.CompareExchange(ref m_engines, null, m_engines);
+            var temp = Interlocked.CompareExchange(ref _engines, null, _engines);
             if (temp == null)
             {
                 return;
@@ -99,14 +94,14 @@ namespace Pql.Engine.DataContainer.Engine
             }
 
             // avoid using GetOrAdd because it may invoke factory method multiple times
-            if (!m_engines.TryGetValue(tenantId, out var tenantEngines))
+            if (!_engines.TryGetValue(tenantId, out var tenantEngines))
             {
-                lock (m_engines)
+                lock (_engines)
                 {
-                    if (!m_engines.TryGetValue(tenantId, out tenantEngines))
+                    if (!_engines.TryGetValue(tenantId, out tenantEngines))
                     {
                         tenantEngines = new ConcurrentDictionary<string, IDataEngine>();
-                        if (!m_engines.TryAdd(tenantId, tenantEngines))
+                        if (!_engines.TryAdd(tenantId, tenantEngines))
                         {
                             throw new Exception("Failed to add tenant-specific cache of engines for tenant " + tenantId);
                         }
@@ -132,12 +127,12 @@ namespace Pql.Engine.DataContainer.Engine
                             new Task(x => ForceExpireOneEngine((DataEngineCache)x), this).Start();
                         }
 
-                        m_tracer.InfoFormat("Creating new engine for tenant {0}, scope {1}", tenantId, scopeId);
-                        var factory = m_container.GetInstance<IStorageDriverFactory>(m_storageDriverKey);
+                        _tracer.InfoFormat("Creating new engine for tenant {0}, scope {1}", tenantId, scopeId);
+                        var factory = _container.GetInstance<IStorageDriverFactory>(_storageDriverKey);
                         var storageDriver = factory.Create();
-                        storageDriver.Initialize(m_tracer, GetDriverConnectionConfig(scopeId, factory));
+                        storageDriver.Initialize(_tracer, GetDriverConnectionConfig(scopeId, factory));
 
-                        engine = new DataEngine(m_tracer, m_instanceName, m_maxEngineConcurrency, storageDriver, RequireDescriptor(storageDriver));
+                        engine = new DataEngine(_tracer, _instanceName, _maxEngineConcurrency, storageDriver, RequireDescriptor(storageDriver));
 
                         if (!tenantEngines.TryAdd(scopeId, engine))
                         {
@@ -169,13 +164,13 @@ namespace Pql.Engine.DataContainer.Engine
         private void OnTimerCallback(object state)
         {
             var cache = (DataEngineCache)state;
-            var engines = cache.m_engines;
+            var engines = cache._engines;
             if (engines == null)
             {
                 return;
             }
 
-            var shouldLogActiveContexts = m_tracer.IsInfoEnabled;
+            var shouldLogActiveContexts = _tracer.IsInfoEnabled;
 
             // unload engines that were not used for more than 10 minutes
             var now = DateTime.UtcNow;
@@ -185,15 +180,15 @@ namespace Pql.Engine.DataContainer.Engine
                 {
                     if (shouldLogActiveContexts)
                     {
-                        m_tracer.InfoFormat("------ Begin state information for engine on tenant {0}, scope {1}", tenantEnginesRec.Key, engineRec.Key);
+                        _tracer.InfoFormat("------ Begin state information for engine on tenant {0}, scope {1}", tenantEnginesRec.Key, engineRec.Key);
                         engineRec.Value.WriteStateInfoToLog();
-                        m_tracer.InfoFormat("------ End state information for engine on tenant {0}, scope {1}", tenantEnginesRec.Key, engineRec.Key);
+                        _tracer.InfoFormat("------ End state information for engine on tenant {0}, scope {1}", tenantEnginesRec.Key, engineRec.Key);
                     }
                     
                     var diff = now - engineRec.Value.UtcLastUsedAt;
                     if (diff.TotalMinutes > MaxEngineUnusedAgeMinutes)
                     {
-                        cache.m_tracer.Info(string.Format("Aging out engine for tenant {0}, scope {1}", tenantEnginesRec.Key, engineRec.Key));
+                        cache._tracer.Info(string.Format("Aging out engine for tenant {0}, scope {1}", tenantEnginesRec.Key, engineRec.Key));
 
                         if (tenantEnginesRec.Value.TryRemove(engineRec.Key, out var engine))
                         {
@@ -209,7 +204,7 @@ namespace Pql.Engine.DataContainer.Engine
         /// </summary>
         private static void ForceExpireOneEngine(DataEngineCache cache)
         {
-            var engines = cache.m_engines;
+            var engines = cache._engines;
             if (engines == null)
             {
                 return;
@@ -235,7 +230,7 @@ namespace Pql.Engine.DataContainer.Engine
 
             if (oldest != null)
             {
-                cache.m_tracer.InfoFormat("Forced expiration of engine for tenant {0}, scope {1}", tenant, scope);
+                cache._tracer.InfoFormat("Forced expiration of engine for tenant {0}, scope {1}", tenant, scope);
 
                 if (container.TryRemove(scope, out var engine))
                 {
@@ -255,15 +250,9 @@ namespace Pql.Engine.DataContainer.Engine
             }
         }
 
-        private int MaxTotalEnginesCount
-        {
-            get { return 1000; }
-        }
+        private int MaxTotalEnginesCount => 1000;
 
-        private static int MaxEngineUnusedAgeMinutes
-        {
-            get { return 10; }
-        }
+        private static int MaxEngineUnusedAgeMinutes => 10;
 
         private object GetDriverConnectionConfig(string scopeId, IStorageDriverFactory storageDriverFactory)
         {

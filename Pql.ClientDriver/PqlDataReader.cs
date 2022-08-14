@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Data;
 using System.Data.Common;
 using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
 
 using Pql.ClientDriver.Protocol;
 using Pql.ClientDriver.Protocol.Wire;
@@ -530,6 +526,7 @@ namespace Pql.ClientDriver
                         using var reader = new BinaryReader(stream);
                         _currentRow.Read(reader);
                     }
+
                     _state = haveItem ? _state = ReaderState.Fetching : ReaderState.Closed;
                 }
                 catch

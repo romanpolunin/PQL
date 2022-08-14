@@ -71,9 +71,6 @@ namespace Pql.ExpressionEngine.Interfaces
         /// <summary>
         /// Formats location string.
         /// </summary>
-        public static string FormatLocationString(SourceLocation loc, int length)
-        {
-            return $"pos {loc.Position}, line {loc.Line}, col {loc.Column}, length {length}";
-        }
+        public static string FormatLocationString(SourceLocation loc, int length) => $"pos {loc.Position}, line {loc.Line}, col {loc.Column}, length {length}";
     }
 }

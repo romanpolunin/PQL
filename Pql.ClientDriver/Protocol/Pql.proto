@@ -33,12 +33,24 @@ message PqlRequestItem
     }
 }
 
+message PqlDataRow
+{
+    // bitvector of not null flags
+    repeated int32 not_nulls = 1;
+    // data of fields which are serialized into 1, 2, 4, 8, 16 byte structures
+    bytes fixed_size_data = 2;
+    // data of string fields
+    repeated string string_data = 3;
+    // data of binary array fields
+    repeated bytes bytes_data = 4;
+}
+
 message PqlResponseItem
 {
     oneof item
     {
         DataResponse header = 1;
-        bytes row = 2;
+        PqlDataRow row = 2;
     }
 }
 

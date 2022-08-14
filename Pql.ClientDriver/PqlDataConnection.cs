@@ -1,7 +1,6 @@
 ﻿using System.Data;
 using System.Data.Common;
 
-using Grpc.Core;
 using Grpc.Net.Client;
 using Grpc.Net.Client.Configuration;
 

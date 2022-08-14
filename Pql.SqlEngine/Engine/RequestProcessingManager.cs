@@ -1,14 +1,10 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using Pql.ClientDriver;
-using Pql.ClientDriver.Protocol;
-using Pql.ClientDriver.Wcf;
-using Pql.Engine.Interfaces;
-using Pql.Engine.Interfaces.Internal;
-using Pql.Engine.Interfaces.Services;
+﻿using System.Text;
 
-namespace Pql.Engine.DataContainer.Engine
+using Pql.SqlEngine.Interfaces;
+using Pql.SqlEngine.Interfaces.Internal;
+using Pql.SqlEngine.Interfaces.Services;
+
+namespace Pql.SqlEngine.DataContainer.Engine
 {
     /// <summary>
     /// RequestProcessingManager's (RPM) <see cref="WriteTo"/> works in parallel with <see cref="DataEngine.ProducerThreadMethod"/>.
@@ -21,10 +17,9 @@ namespace Pql.Engine.DataContainer.Engine
     /// </summary>
     internal class RequestProcessingManager : Stream, IPqlDataWriter
     {
-        private readonly RequestExecutionContext m_executionContext;
-        private readonly RawDataWriterPerfCounters m_counters;
+        private readonly RequestExecutionContext _executionContext;
 
-        public RequestProcessingManager(ITracer tracer, IPqlEngineHostProcess process, RawDataWriterPerfCounters counters)
+        public RequestProcessingManager(ITracer tracer, IPqlEngineHostProcess process)
         {
             if (tracer == null)
             {
@@ -36,8 +31,7 @@ namespace Pql.Engine.DataContainer.Engine
                 throw new ArgumentNullException(nameof(process));
             }
 
-            m_counters = counters ?? throw new ArgumentNullException(nameof(counters));
-            m_executionContext = new RequestExecutionContext(process, tracer);
+            _executionContext = new RequestExecutionContext(process, tracer);
         }
 
         public void Attach(PqlMessage requestMessage, IDataEngine dataEngine, IPqlClientSecurityContext authContext)
@@ -52,14 +46,11 @@ namespace Pql.Engine.DataContainer.Engine
                 throw new ArgumentNullException(nameof(authContext));
             }
 
-            m_executionContext.AssertIsClean();
-            m_executionContext.AttachInputMessage(requestMessage, dataEngine, authContext);
+            _executionContext.AssertIsClean();
+            _executionContext.AttachInputMessage(requestMessage, dataEngine, authContext);
         }
 
-        public RequestExecutionContext ExecutionContext
-        {
-            get { return m_executionContext; }
-        }
+        public RequestExecutionContext ExecutionContext => _executionContext;
 
         protected override void Dispose(bool disposing)
         {
@@ -68,7 +59,7 @@ namespace Pql.Engine.DataContainer.Engine
                 GC.SuppressFinalize(this);
             }
 
-            m_executionContext.Dispose();
+            _executionContext.Dispose();
 
             base.Dispose(disposing);
         }
@@ -127,8 +118,8 @@ namespace Pql.Engine.DataContainer.Engine
             {
                 using var binaryWriter = new BinaryWriter(output, Encoding.UTF8, true);
                 // rotate through the buffers, flush them to output until producer stops
-                var cancellation = m_executionContext.CancellationTokenSource.Token;
-                var buffersRing = m_executionContext.BuffersRing;
+                var cancellation = _executionContext.CancellationTokenSource.Token;
+                var buffersRing = _executionContext.BuffersRing;
                 var lastCompletedTask = buffersRing.TakeCompletedTask(cancellation);
                 while (lastCompletedTask != null)
                 {
@@ -170,15 +161,15 @@ namespace Pql.Engine.DataContainer.Engine
             }
             catch (Exception e)
             {
-                m_executionContext.Cancel(e);
+                _executionContext.Cancel(e);
 
                 if (canReportLocalErrors)
                 {
-                    using var errorWriter = new PqlErrorDataWriter(1, m_executionContext.LastError, true);
+                    using var errorWriter = new PqlErrorDataWriter(1, _executionContext.LastError, true);
                     errorWriter.WriteTo(output);
                 }
 
-                if (!(e is OperationCanceledException))
+                if (e is not OperationCanceledException)
                 {
                     throw;
                 }
@@ -187,10 +178,7 @@ namespace Pql.Engine.DataContainer.Engine
 
         private void ReportStats(long bytesReturned, long rowsReturned)
         {
-            m_counters.ByteRate.IncrementBy(bytesReturned);
-            m_counters.RowRate.IncrementBy(rowsReturned);
-            m_counters.TotalBytes.IncrementBy(bytesReturned);
-            m_counters.TotalRows.IncrementBy(rowsReturned);
+            
         }
 
         /// <summary>
@@ -204,29 +192,17 @@ namespace Pql.Engine.DataContainer.Engine
             throw new NotSupportedException();
         }
 
-        public override bool CanRead
-        {
-            get { return true; }
-        }
+        public override bool CanRead => true;
 
-        public override bool CanSeek
-        {
-            get { return false; }
-        }
+        public override bool CanSeek => false;
 
-        public override bool CanWrite
-        {
-            get { return false; }
-        }
+        public override bool CanWrite => false;
 
-        public override long Length
-        {
-            get { throw new NotSupportedException(); }
-        }
+        public override long Length => throw new NotSupportedException();
 
         public override long Position
         {
-            get { throw new NotSupportedException(); } set { throw new NotSupportedException(); }
+            get => throw new NotSupportedException(); set => throw new NotSupportedException();
         }
     }
 }

@@ -1,25 +1,19 @@
-﻿using System;
-using System.Runtime.Serialization;
-using Pql.Engine.Interfaces.Internal;
+﻿using System.Text.Json.Serialization;
 
-namespace Pql.Engine.Interfaces.Services
+using Pql.SqlEngine.Interfaces.Internal;
+
+namespace Pql.SqlEngine.Interfaces.Services
 {
-    [DataContract]
     public struct DataContainerStatsFile
     {
-        [DataMember]
-        public readonly string DriverVersion;
-        [DataMember]
-        public readonly DataContainerStats DataContainerStats;
+        [JsonInclude]
+        public string DriverVersion { get; }
+        [JsonInclude]
+        public DataContainerStats DataContainerStats { get; }
 
-        public DataContainerStatsFile(Version version, DataContainerStats stats)
+        public DataContainerStatsFile(string version, DataContainerStats stats)
         {
-            if (version == null)
-            {
-                throw new ArgumentNullException(nameof(version));
-            }
-
-            DriverVersion = version.ToString();
+            DriverVersion = string.IsNullOrEmpty(version) ? throw new ArgumentNullException(nameof(version)) : version.ToString();
             DataContainerStats = stats ?? throw new ArgumentNullException(nameof(stats));
         }
     }

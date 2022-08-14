@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Pql.Engine.Interfaces
+﻿namespace Pql.SqlEngine.Interfaces
 {
     /// <summary>
     /// External logger interface.

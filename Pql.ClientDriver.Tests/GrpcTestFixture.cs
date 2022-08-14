@@ -41,10 +41,7 @@ namespace Pql.ClientDriver.Tests
         {
         }
 
-        public void ConfigureWebHost(Action<IWebHostBuilder> configure)
-        {
-            _configureWebHost = configure;
-        }
+        public void ConfigureWebHost(Action<IWebHostBuilder> configure) => _configureWebHost = configure;
 
         private void EnsureServer()
         {

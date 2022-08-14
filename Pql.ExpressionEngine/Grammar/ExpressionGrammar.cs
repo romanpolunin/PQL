@@ -56,7 +56,7 @@ namespace Pql.ExpressionEngine.Grammar
 
             caseWhenThen.Rule = "WHEN" + exprList + "THEN" + expression;
             caseWhenList.Rule = MakePlusRule(caseWhenList, caseWhenThen);
-            caseDefaultOpt.Rule = Empty | "ELSE" + expression;
+            caseDefaultOpt.Rule = Empty | ("ELSE" + expression);
             caseVariable.Rule = Empty | expression;
             caseStmt.Rule = "CASE" + caseVariable + caseWhenList + caseDefaultOpt + "END";
 
@@ -65,13 +65,13 @@ namespace Pql.ExpressionEngine.Grammar
             expression.Rule = term | unExpr | binExpr | caseStmt | betweenExpr; //-- BETWEEN brings a few parsing conflicts, use parentheses
             tuple.Rule = "(" + exprList + ")";
             term.Rule = id | stringLiteral | numberLiteral | funCall | tuple;// | inStmt;
-            unExpr.Rule = unOp + term | term + "IS" + "NULL" | (term + "IS" + "NOT" + "NULL");
+            unExpr.Rule = (unOp + term) | (term + "IS" + "NULL") | (term + "IS" + "NOT" + "NULL");
             unOp.Rule = notTerm | "+" | "-" | "~";
             binExpr.Rule = expression + binOp + expression;
             binOp.Rule = ToTerm("+") | "-" | "*" | "/" | "%" //arithmetic
                         | "&" | "|" | "^"                     //bit
                         | "=" | ">" | "<" | ">=" | "<=" | "<>" | "!=" | "!<" | "!>"
-                        | "AND" | "OR" | "XOR" | "LIKE" | (notTerm + "LIKE") | "IN" | notTerm + "IN";
+                        | "AND" | "OR" | "XOR" | "LIKE" | (notTerm + "LIKE") | "IN" | (notTerm + "IN");
             betweenExpr.Rule = expression + notOpt + "BETWEEN" + expression + "AND" + expression;
             notOpt.Rule = Empty | notTerm;
             //funCall covers some psedo-operators and special forms like ANY(...), SOME(...), ALL(...), EXISTS(...), IN(...)

@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 using Grpc.Net.Client;
-
-using Microsoft.Extensions.Logging;
 
 namespace Pql.ClientDriver.Tests
 {

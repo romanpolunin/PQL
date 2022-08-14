@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Pql.ClientDriver
+﻿namespace Pql.ClientDriver
 {
     /// <summary>
     /// Implementation of client security context, as it gets passed between client and server.

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Pql.Engine.Interfaces.Services
+﻿namespace Pql.SqlEngine.Interfaces.Services
 {
     /// <summary>
     /// Storage driver factory is plugged into PQL query processor core, 
@@ -19,7 +17,6 @@ namespace Pql.Engine.Interfaces.Services
         /// Settings object type is specific to implementation.
         /// </summary>
         /// <param name="scopeId">ScopeId is used to locate data store</param>
-        /// <returns></returns>
         object GetDriverConfig(string scopeId);
 
         /// <summary>

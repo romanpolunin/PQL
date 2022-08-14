@@ -1,20 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
+﻿using System.Data;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using System.Threading;
+
 using Irony.Parsing;
-using Pql.ClientDriver.Protocol;
-using Pql.Engine.Interfaces.Internal;
-using Pql.Engine.Interfaces.Parsing;
+
 using Pql.ExpressionEngine.Compiler;
 using Pql.ExpressionEngine.Interfaces;
 using Pql.ExpressionEngine.Utilities;
+using Pql.Server.Protocol.Wire;
+using Pql.SqlEngine.Interfaces;
+using Pql.SqlEngine.Interfaces.Internal;
+using Pql.SqlEngine.Interfaces.Parsing;
 
-namespace Pql.Engine.DataContainer.Parser
+namespace Pql.SqlEngine.DataContainer.Parser
 {
     internal class QueryParser
     {
@@ -24,10 +23,10 @@ namespace Pql.Engine.DataContainer.Parser
 
         private static readonly IExpressionEvaluatorRuntime s_expressionRuntime;
         
-        private readonly ObjectPool<Irony.Parsing.Parser> m_parsers;
-        private readonly DataContainerDescriptor m_containerDescriptor;
-        private readonly QueryPreprocessor m_preprocessor;
-        private readonly Dictionary<int, ParseTreeNode> m_simpleFieldAccessorNodes;
+        private readonly ObjectPool<Irony.Parsing.Parser> _parsers;
+        private readonly DataContainerDescriptor _containerDescriptor;
+        private readonly QueryPreprocessor _preprocessor;
+        private readonly Dictionary<int, ParseTreeNode> _simpleFieldAccessorNodes;
         
         static QueryParser()
         {
@@ -83,7 +82,7 @@ namespace Pql.Engine.DataContainer.Parser
 
             if (names != null)
             {
-                for (var ordinal = 0; ordinal < names.Length; ordinal++)
+                for (var ordinal = 0; ordinal < names.Count; ordinal++)
                 {
                     if (0 == StringComparer.OrdinalIgnoreCase.Compare(names[ordinal], paramName))
                     {
@@ -211,19 +210,19 @@ namespace Pql.Engine.DataContainer.Parser
         /// </summary>
         public QueryParser(DataContainerDescriptor containerDescriptor, int maxConcurrency)
         {
-            m_parsers = new ObjectPool<Irony.Parsing.Parser>(maxConcurrency, null);
+            _parsers = new ObjectPool<Irony.Parsing.Parser>(maxConcurrency, null);
             for (var i = 0; i < maxConcurrency; i++)
             {
-                m_parsers.Return(new Irony.Parsing.Parser(s_langData, s_pqlNonTerminal));
+                _parsers.Return(new Irony.Parsing.Parser(s_langData, s_pqlNonTerminal));
             }
 
-            m_containerDescriptor = containerDescriptor ?? throw new ArgumentNullException(nameof(containerDescriptor));
-            m_preprocessor = new QueryPreprocessor(containerDescriptor);
+            _containerDescriptor = containerDescriptor ?? throw new ArgumentNullException(nameof(containerDescriptor));
+            _preprocessor = new QueryPreprocessor(containerDescriptor);
 
             // these predefined instances of ParseTreeNode are substituted when parsing "select * from .." statement,
             // in order to avoid allocating them every time
-            m_simpleFieldAccessorNodes = new Dictionary<int, ParseTreeNode>();
-            foreach (var field in m_containerDescriptor.EnumerateFields())
+            _simpleFieldAccessorNodes = new Dictionary<int, ParseTreeNode>();
+            foreach (var field in _containerDescriptor.EnumerateFields())
             {
                 // generate columnItem -> columnSource -> Id -> id_simple hierarchy, exactly same structure as it comes out of grammar-based parser
                 var idNode = new ParseTreeNode(new NonTerminal("Id"), new SourceSpan());
@@ -235,7 +234,7 @@ namespace Pql.Engine.DataContainer.Parser
                 var columnItemNode = new ParseTreeNode(new NonTerminal("columnItem"), new SourceSpan());
                 columnItemNode.ChildNodes.Add(columnSourceNode);
                 
-                m_simpleFieldAccessorNodes.Add(field.FieldId, columnItemNode);
+                _simpleFieldAccessorNodes.Add(field.FieldId, columnItemNode);
             }
         }
 
@@ -362,18 +361,18 @@ namespace Pql.Engine.DataContainer.Parser
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException("requestBulk", requestBulk.DbStatementType, "Invalid bulk statement type");
+                    throw new ArgumentOutOfRangeException(nameof(requestBulk), requestBulk.DbStatementType, "Invalid bulk statement type");
             }
 
-            parsedRequest.TargetEntity = m_containerDescriptor.RequireDocumentType(
-                m_containerDescriptor.RequireDocumentTypeName(requestBulk.EntityName));
+            parsedRequest.TargetEntity = _containerDescriptor.RequireDocumentType(
+                _containerDescriptor.RequireDocumentTypeName(requestBulk.EntityName));
 
             if (string.IsNullOrEmpty(parsedRequest.TargetEntity.PrimaryKeyFieldName))
             {
                 throw new Exception("Target entity does not have a primary key, cannot perform bulk operations on it");
             }
 
-            parsedRequest.TargetEntityPkField = m_containerDescriptor.RequireField(
+            parsedRequest.TargetEntityPkField = _containerDescriptor.RequireField(
                 parsedRequest.TargetEntity.DocumentType, parsedRequest.TargetEntity.PrimaryKeyFieldName);
 
             // we always expect value of primary key into driver row data for bulk requests at first position
@@ -384,10 +383,10 @@ namespace Pql.Engine.DataContainer.Parser
                 throw new Exception("First field in bulk request input schema on this entity must be the primary key field");
             }
 
-            for (var ordinal = 0; ordinal < requestBulk.FieldNames.Length; ordinal++)
+            for (var ordinal = 0; ordinal < requestBulk.FieldNames.Count; ordinal++)
             {
                 var fieldName = requestBulk.FieldNames[ordinal];
-                var field = m_containerDescriptor.RequireField(parsedRequest.TargetEntity.DocumentType, fieldName);
+                var field = _containerDescriptor.RequireField(parsedRequest.TargetEntity.DocumentType, fieldName);
 
                 if (ordinal != 0 && ReferenceEquals(parsedRequest.TargetEntityPkField, field))
                 {
@@ -408,7 +407,7 @@ namespace Pql.Engine.DataContainer.Parser
         private void ParsePqlStatementRequest(DataRequest request, ParsedRequest parsedRequest, CancellationToken cancellation)
         {
             ParseTree parseTree;
-            using (var poolAccessor = m_parsers.Take(cancellation))
+            using (var poolAccessor = _parsers.Take(cancellation))
             {
                 try
                 {
@@ -470,7 +469,7 @@ namespace Pql.Engine.DataContainer.Parser
             parsedRequest.TargetEntity = GetTargetEntity(insertEntityClause);
 
             // preprocess identifiers
-            m_preprocessor.ProcessIdentifierAliases(insertStmt, parsedRequest.TargetEntity);
+            _preprocessor.ProcessIdentifierAliases(insertStmt, parsedRequest.TargetEntity);
 
             var insertFieldsListClause = insertStmt.RequireChild("idList", 3, 0);
             var valueListClause = insertStmt.RequireChild("insertTuplesList", 4, 1);
@@ -487,11 +486,11 @@ namespace Pql.Engine.DataContainer.Parser
                 throw new CompilationException("Number of fields in INSERT clause must match number of expressions in VALUES clause", insertStmt);
             }
 
-            parsedRequest.TargetEntityPkField = m_containerDescriptor.RequireField(parsedRequest.TargetEntity.DocumentType, parsedRequest.TargetEntity.PrimaryKeyFieldName);
+            parsedRequest.TargetEntityPkField = _containerDescriptor.RequireField(parsedRequest.TargetEntity.DocumentType, parsedRequest.TargetEntity.PrimaryKeyFieldName);
             for (var ordinal = 0; ordinal < insertFieldsListClause.ChildNodes.Count; ordinal++)
             {
                 var insertFieldNode = insertFieldsListClause.ChildNodes[ordinal];
-                var field = TryGetFieldByIdentifierNode(insertFieldNode, m_containerDescriptor, parsedRequest.TargetEntity.DocumentType);
+                var field = TryGetFieldByIdentifierNode(insertFieldNode, _containerDescriptor, parsedRequest.TargetEntity.DocumentType);
                 if (field == null)
                 {
                     throw new CompilationException("Attempting to INSERT into an unknown field", insertFieldNode);
@@ -527,9 +526,9 @@ namespace Pql.Engine.DataContainer.Parser
             parsedRequest.TargetEntity = GetTargetEntity(deleteFromClause);
 
             // preprocess identifiers
-            m_preprocessor.ProcessIdentifierAliases(deleteStmt, parsedRequest.TargetEntity);
+            _preprocessor.ProcessIdentifierAliases(deleteStmt, parsedRequest.TargetEntity);
 
-            var ctx = GetTreeIteratorContext(parsedRequest, m_containerDescriptor);
+            var ctx = GetTreeIteratorContext(parsedRequest, _containerDescriptor);
             ctx.Functor = FieldExtractor;
 
             // get field names for where clause
@@ -548,15 +547,15 @@ namespace Pql.Engine.DataContainer.Parser
             parsedRequest.TargetEntity = GetTargetEntity(updateEntityClause);
 
             // preprocess identifiers
-            m_preprocessor.ProcessIdentifierAliases(updateStmt, parsedRequest.TargetEntity);
+            _preprocessor.ProcessIdentifierAliases(updateStmt, parsedRequest.TargetEntity);
 
-            var ctx = GetTreeIteratorContext(parsedRequest, m_containerDescriptor);
+            var ctx = GetTreeIteratorContext(parsedRequest, _containerDescriptor);
             ctx.Functor = FieldExtractor;
 
             var assignListClause = updateStmt.RequireChild("assignList", 3);
             foreach (var assignClause in assignListClause.ChildNodes)
             {
-                var field = TryGetFieldByIdentifierNode(assignClause.RequireChild("Id", 0), m_containerDescriptor, parsedRequest.TargetEntity.DocumentType);
+                var field = TryGetFieldByIdentifierNode(assignClause.RequireChild("Id", 0), _containerDescriptor, parsedRequest.TargetEntity.DocumentType);
                 if (field == null)
                 {
                     throw new CompilationException("Attempting to SET an unknown field", assignClause);
@@ -593,7 +592,7 @@ namespace Pql.Engine.DataContainer.Parser
             var fromEntityNode = fromClause.RequireChild("Id", 1, 0);
             parsedRequest.TargetEntity = GetTargetEntity(fromEntityNode);
 
-            var ctx = GetTreeIteratorContext(parsedRequest, m_containerDescriptor);
+            var ctx = GetTreeIteratorContext(parsedRequest, _containerDescriptor);
             ctx.Functor = FieldExtractor;
 
             // get field names for select clause
@@ -621,7 +620,7 @@ namespace Pql.Engine.DataContainer.Parser
                     parsedRequest.Select.SelectClauses.Add(columnItem);
 
                     // preprocess identifiers
-                    m_preprocessor.ProcessIdentifierAliases(columnSource, parsedRequest.TargetEntity);
+                    _preprocessor.ProcessIdentifierAliases(columnSource, parsedRequest.TargetEntity);
 
                     // extract field names from a regular select clause (but do not look into "as" alias)
                     IterateTree(columnSource, 0, ctx);
@@ -632,10 +631,10 @@ namespace Pql.Engine.DataContainer.Parser
                 // they ask for all fields (wildcard)
                 // let's extract only unpacked blobs
                 var docTypeDescriptor = parsedRequest.TargetEntity;
-                foreach (var field in m_containerDescriptor.EnumerateFields().Where(x => x.OwnerDocumentType == docTypeDescriptor.DocumentType))
+                foreach (var field in _containerDescriptor.EnumerateFields().Where(x => x.OwnerDocumentType == docTypeDescriptor.DocumentType))
                 {
                     ctx.ParsedRequest.Select.SelectFields.Add(field);
-                    ctx.ParsedRequest.Select.SelectClauses.Add(m_simpleFieldAccessorNodes[field.FieldId]);
+                    ctx.ParsedRequest.Select.SelectClauses.Add(_simpleFieldAccessorNodes[field.FieldId]);
                 }
             }
             else
@@ -659,8 +658,8 @@ namespace Pql.Engine.DataContainer.Parser
             var targetEntityName = parseTreeNode.RequireChild("id_simple", 0).Token.ValueString;
             try
             {
-                var docType = m_containerDescriptor.RequireDocumentTypeName(targetEntityName);
-                return m_containerDescriptor.RequireDocumentType(docType);
+                var docType = _containerDescriptor.RequireDocumentTypeName(targetEntityName);
+                return _containerDescriptor.RequireDocumentType(docType);
             }
             catch (ArgumentException)
             {
@@ -677,7 +676,7 @@ namespace Pql.Engine.DataContainer.Parser
                 if (ctx.ParsedRequest.BaseDataset.WhereClauseRoot != null)
                 {
                     // preprocess identifiers
-                    m_preprocessor.ProcessIdentifierAliases(whereClause, ctx.ParsedRequest.TargetEntity);
+                    _preprocessor.ProcessIdentifierAliases(whereClause, ctx.ParsedRequest.TargetEntity);
 
                     // iterator callback will place column IDs into "where" list
                     ctx.Argument = 2;
@@ -693,7 +692,7 @@ namespace Pql.Engine.DataContainer.Parser
             if (ctx.ParsedRequest.BaseDataset.OrderClause != null)
             {
                 // preprocess identifiers
-                m_preprocessor.ProcessIdentifierAliases(ctx.ParsedRequest.BaseDataset.OrderClause, ctx.ParsedRequest.TargetEntity);
+                _preprocessor.ProcessIdentifierAliases(ctx.ParsedRequest.BaseDataset.OrderClause, ctx.ParsedRequest.TargetEntity);
 
                 // iterator callback will place column IDs and ASC/DESC flag into "order" list
                 ctx.Functor = OrderFieldExtractor;
@@ -731,7 +730,7 @@ namespace Pql.Engine.DataContainer.Parser
                 var param = clause.TryGetChild("Id", 1);
                 if (param != null)
                 {
-                    parsedRequest.BaseDataset.Paging.PageSize = CompileInt32ParamExtractorForPaging(parsedRequest, param, Int32.MaxValue);
+                    parsedRequest.BaseDataset.Paging.PageSize = CompileInt32ParamExtractorForPaging(parsedRequest, param, int.MaxValue);
                 }
                 else
                 {

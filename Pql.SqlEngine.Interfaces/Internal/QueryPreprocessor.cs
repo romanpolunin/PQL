@@ -1,19 +1,18 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+
 using Irony.Parsing;
 
-namespace Pql.Engine.Interfaces.Internal
+namespace Pql.SqlEngine.Interfaces.Internal
 {
     public class QueryPreprocessor
     {
-        private readonly DataContainerDescriptor m_containerDescriptor;
-        private readonly ConcurrentDictionary<string, ParseTreeNode> m_identifierAliasParts;
+        private readonly DataContainerDescriptor _containerDescriptor;
+        private readonly ConcurrentDictionary<string, ParseTreeNode> _identifierAliasParts;
 
         public QueryPreprocessor(DataContainerDescriptor containerDescriptor)
         {
-            m_containerDescriptor = containerDescriptor ?? throw new ArgumentNullException(nameof(containerDescriptor));
-            m_identifierAliasParts = new ConcurrentDictionary<string, ParseTreeNode>(StringComparer.OrdinalIgnoreCase);
+            _containerDescriptor = containerDescriptor ?? throw new ArgumentNullException(nameof(containerDescriptor));
+            _identifierAliasParts = new ConcurrentDictionary<string, ParseTreeNode>(StringComparer.OrdinalIgnoreCase);
         }
 
         public void ProcessIdentifierAliases(ParseTreeNode root, DocumentTypeDescriptor targetEntity)
@@ -22,7 +21,7 @@ namespace Pql.Engine.Interfaces.Internal
                 {
                     Buffer = new List<string>(5),
                     TargetEntity = targetEntity,
-                    CachedParts = m_identifierAliasParts
+                    CachedParts = _identifierAliasParts
                 };
 
             IterateTree(root, 0, ctx);

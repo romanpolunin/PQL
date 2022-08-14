@@ -1,7 +1,4 @@
-/*
-using System;
-using System.Threading;
-using Pql.ClientDriver;
+using Pql.SqlEngine.Interfaces;
 
 namespace Pql.Engine.DataContainer
 {
@@ -10,15 +7,14 @@ namespace Pql.Engine.DataContainer
     /// </summary>
     public static class PqlEngineSecurityContext
     {
-        private static readonly ThreadLocal<IPqlClientSecurityContext> Context = new ThreadLocal<IPqlClientSecurityContext>();
+        private static readonly ThreadLocal<IPqlClientSecurityContext> s_context = new ThreadLocal<IPqlClientSecurityContext>();
 
         /// <summary>
         /// Sets security context on current thread's state.
         /// </summary>
         public static void Set(IPqlClientSecurityContext clientSecurityContext)
         {
-            Context.Value = clientSecurityContext ?? throw new ArgumentNullException("clientSecurityContext");
+            s_context.Value = clientSecurityContext ?? throw new ArgumentNullException(nameof(clientSecurityContext));
         }
     }
 }
-*/

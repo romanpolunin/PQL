@@ -1,15 +1,12 @@
-﻿using System;
-using System.Data;
-using System.IO;
-using System.Runtime.CompilerServices;
+﻿using System.Data;
 using System.Text;
-using Pql.ClientDriver;
-using Pql.ClientDriver.Protocol;
-using Pql.Engine.Interfaces.Internal;
-using Pql.Engine.Interfaces.Services;
-using Pql.ExpressionEngine.Interfaces;
 
-namespace Pql.Engine.DataContainer.Engine
+using Pql.ExpressionEngine.Interfaces;
+using Pql.SqlEngine.Interfaces;
+using Pql.SqlEngine.Interfaces.Internal;
+using Pql.SqlEngine.Interfaces.Services;
+
+namespace Pql.SqlEngine.DataContainer.Engine
 {
     /// <summary>
     /// Utility class that reads incoming stream of <see cref="RowData"/> items one item at a time 
@@ -17,12 +14,12 @@ namespace Pql.Engine.DataContainer.Engine
     /// </summary>
     internal class InputDataStreamEnumerator : IDriverDataEnumerator
     {
-        private readonly int m_countToRead;
-        private readonly DriverRowData m_driverRowData;
-        private readonly BinaryReader m_reader;
-        private readonly RowData m_readerBuffer;
-        private int m_readSoFar;
-        private readonly RowData.DataTypeRepresentation m_pkFieldType;
+        private readonly int _countToRead;
+        private readonly DriverRowData _driverRowData;
+        private readonly BinaryReader _reader;
+        private readonly RowData _readerBuffer;
+        private int _readSoFar;
+        private readonly RowData.DataTypeRepresentation _pkFieldType;
 
         /// <summary>
         /// Ctr.
@@ -69,54 +66,54 @@ namespace Pql.Engine.DataContainer.Engine
                 if (driverRowData.FieldTypes[ordinal] != fieldTypes[ordinal])
                 {
                     throw new ArgumentException(string.Format("Field type mismatch at ordinal {0}. Client type: {1}, driver type: {2}",
-                        ordinal, fieldTypes[ordinal], m_driverRowData.FieldTypes[ordinal]));
+                        ordinal, fieldTypes[ordinal], _driverRowData.FieldTypes[ordinal]));
                 }
             }
 
-            m_countToRead = countToRead;
-            m_driverRowData = driverRowData;
-            m_reader = new BinaryReader(stream, Encoding.UTF8, true);
-            m_readerBuffer = new RowData(fieldTypes);
-            m_pkFieldType = m_readerBuffer.FieldRepresentationTypes[0];
+            _countToRead = countToRead;
+            _driverRowData = driverRowData;
+            _reader = new BinaryReader(stream, Encoding.UTF8, true);
+            _readerBuffer = new RowData(fieldTypes);
+            _pkFieldType = _readerBuffer.FieldRepresentationTypes[0];
         }
 
         public bool MoveNext()
         {
-            if (m_readSoFar >= m_countToRead)
+            if (_readSoFar >= _countToRead)
             {
                 return false;
             }
 
-            if (!m_readerBuffer.Read(m_reader))
+            if (!_readerBuffer.Read(_reader))
             {
                 throw new Exception(string.Format(
-                    "Failed to advance. Current count: {0}, expected count: {1}", m_readSoFar, m_countToRead));
+                    "Failed to advance. Current count: {0}, expected count: {1}", _readSoFar, _countToRead));
             }
 
             ReadFromClientRowData();
 
             ReadPrimaryKey();
 
-            m_readSoFar++;
-            return m_readSoFar <= m_countToRead;
+            _readSoFar++;
+            return _readSoFar <= _countToRead;
         }
 
         private void ReadPrimaryKey()
         {
-            if (!BitVector.Get(m_readerBuffer.NotNulls, 0))
+            if (!BitVector.Get(_readerBuffer.NotNulls, 0))
             {
                 throw new Exception("Primary key value may not be null");
             }
 
-            var indexInArray = m_readerBuffer.FieldArrayIndexes[0];
-            var internalEntityId = m_driverRowData.InternalEntityId;
+            var indexInArray = _readerBuffer.FieldArrayIndexes[0];
+            var internalEntityId = _driverRowData.InternalEntityId;
             
-            switch (m_pkFieldType)
+            switch (_pkFieldType)
             {
                 case RowData.DataTypeRepresentation.ByteArray:
                     {
-                        var value = m_readerBuffer.BinaryData[indexInArray];
-                        if (value.Length == 0 || value.Length > byte.MaxValue)
+                        var value = _readerBuffer.BinaryData[indexInArray];
+                        if (value.Length is 0 or > byte.MaxValue)
                         {
                             throw new Exception("Primary key length must be within 1 to 255 bytes");
                         }
@@ -127,14 +124,14 @@ namespace Pql.Engine.DataContainer.Engine
                     break;
                 case RowData.DataTypeRepresentation.CharArray:
                     {
-                        var value = m_readerBuffer.StringData[indexInArray];
-                        if (value.Length == 0 || value.Length > byte.MaxValue)
+                        var value = _readerBuffer.StringData[indexInArray];
+                        if (value.Length is 0 or > byte.MaxValue)
                         {
                             throw new Exception("Primary key length must be within 1 to 255 characters");
                         }
 
                         var bytelen = Encoding.UTF8.GetByteCount(value.Data, 0, value.Length);
-                        if (bytelen == 0 || bytelen > byte.MaxValue)
+                        if (bytelen is 0 or > byte.MaxValue)
                         {
                             throw new Exception("UTF conversion must produce from 1 to 255 bytes");
                         }
@@ -143,7 +140,7 @@ namespace Pql.Engine.DataContainer.Engine
                     break;
                 case RowData.DataTypeRepresentation.Value8Bytes:
                     {
-                        var value = m_readerBuffer.ValueData8Bytes[indexInArray].AsUInt64;
+                        var value = _readerBuffer.ValueData8Bytes[indexInArray].AsUInt64;
                         var pos = 1;
                         while (value > 0)
                         {
@@ -156,7 +153,7 @@ namespace Pql.Engine.DataContainer.Engine
                     break;
                 case RowData.DataTypeRepresentation.Value16Bytes:
                     {
-                        var value = (UInt64)m_readerBuffer.ValueData16Bytes[indexInArray].Lo;
+                        var value = (ulong)_readerBuffer.ValueData16Bytes[indexInArray].Lo;
                         var pos = 1;
                         while (value > 0)
                         {
@@ -164,7 +161,7 @@ namespace Pql.Engine.DataContainer.Engine
                             value >>= 8;
                             pos++;
                         }
-                        value = (UInt64)m_readerBuffer.ValueData16Bytes[indexInArray].Hi;
+                        value = (ulong)_readerBuffer.ValueData16Bytes[indexInArray].Hi;
                         while (value > 0)
                         {
                             internalEntityId[pos] = (byte)value;
@@ -194,9 +191,9 @@ namespace Pql.Engine.DataContainer.Engine
             // we fetch all fields in MoveNext, so do nothing
         }
 
-        public DriverRowData Current { get { return m_driverRowData; } }
+        public DriverRowData Current => _driverRowData;
 
-        
+
         public void FetchInternalEntityIdIntoChangeBuffer(DriverChangeBuffer changeBuffer, RequestExecutionContext context)
         {
             // reference copy is safe because storage driver is responsible for copying this value 
@@ -212,32 +209,32 @@ namespace Pql.Engine.DataContainer.Engine
         
         private void ReadFromClientRowData()
         {
-            for (var i = 0; i < m_driverRowData.NotNulls.Length; i++)
+            for (var i = 0; i < _driverRowData.NotNulls.Length; i++)
             {
-                m_driverRowData.NotNulls[i] = m_readerBuffer.NotNulls[i];
+                _driverRowData.NotNulls[i] = _readerBuffer.NotNulls[i];
             }
 
-            for (var ordinal = 0; ordinal < m_readerBuffer.FieldTypes.Length; ordinal++)
+            for (var ordinal = 0; ordinal < _readerBuffer.FieldTypes.Length; ordinal++)
             {
-                var indexInArray = m_readerBuffer.GetIndexInArray(ordinal);
+                var indexInArray = _readerBuffer.GetIndexInArray(ordinal);
 
-                if (!BitVector.Get(m_driverRowData.NotNulls, ordinal))
+                if (!BitVector.Get(_driverRowData.NotNulls, ordinal))
                 {
                     continue;
                 }
 
-                switch (m_readerBuffer.FieldRepresentationTypes[ordinal])
+                switch (_readerBuffer.FieldRepresentationTypes[ordinal])
                 {
                     case RowData.DataTypeRepresentation.ByteArray:
                         {
-                            var dest = m_driverRowData.BinaryData[indexInArray];
+                            var dest = _driverRowData.BinaryData[indexInArray];
                             if (dest == null)
                             {
                                 dest = new SizableArrayOfByte();
-                                m_driverRowData.BinaryData[indexInArray] = dest;
+                                _driverRowData.BinaryData[indexInArray] = dest;
                             }
 
-                            var src = m_readerBuffer.BinaryData[indexInArray];
+                            var src = _readerBuffer.BinaryData[indexInArray];
                             dest.SetLength(src.Length);
                             if (src.Length > 0)
                             {
@@ -247,19 +244,19 @@ namespace Pql.Engine.DataContainer.Engine
                         break;
                     case RowData.DataTypeRepresentation.CharArray:
                         {
-                            var src = m_readerBuffer.StringData[indexInArray];
-                            m_driverRowData.StringData[indexInArray] = src == null || src.Length == 0 ? string.Empty : new string(src.Data, 0, src.Length);
+                            var src = _readerBuffer.StringData[indexInArray];
+                            _driverRowData.StringData[indexInArray] = src == null || src.Length == 0 ? string.Empty : new string(src.Data, 0, src.Length);
                         }
                         break;
                     case RowData.DataTypeRepresentation.Value8Bytes:
-                        m_driverRowData.ValueData8Bytes[indexInArray].AsInt64 = m_readerBuffer.ValueData8Bytes[indexInArray].AsInt64;
+                        _driverRowData.ValueData8Bytes[indexInArray].AsInt64 = _readerBuffer.ValueData8Bytes[indexInArray].AsInt64;
                         break;
                     case RowData.DataTypeRepresentation.Value16Bytes:
-                        m_driverRowData.ValueData16Bytes[indexInArray].Lo = m_readerBuffer.ValueData16Bytes[indexInArray].Lo;
-                        m_driverRowData.ValueData16Bytes[indexInArray].Hi = m_readerBuffer.ValueData16Bytes[indexInArray].Hi;
+                        _driverRowData.ValueData16Bytes[indexInArray].Lo = _readerBuffer.ValueData16Bytes[indexInArray].Lo;
+                        _driverRowData.ValueData16Bytes[indexInArray].Hi = _readerBuffer.ValueData16Bytes[indexInArray].Hi;
                         break;
                     default:
-                        throw new InvalidOperationException("Invalid representation type: " + m_readerBuffer.FieldRepresentationTypes[ordinal]);
+                        throw new InvalidOperationException("Invalid representation type: " + _readerBuffer.FieldRepresentationTypes[ordinal]);
                 }
             }
         }

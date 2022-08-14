@@ -26,6 +26,7 @@
         <ProjectReference Include="..\Pql.ExpressionEngine\Pql.ExpressionEngine.csproj" />
         <ProjectReference Include="..\Pql.ClientDriver\Pql.ClientDriver.csproj" />
         <ProjectReference Include="..\Pql.Server\Pql.Server.csproj" />
+        <ProjectReference Include="..\Pql.SqlEngine.Interfaces\Pql.SqlEngine.Interfaces.csproj" />
     </ItemGroup>
 
 </Project>

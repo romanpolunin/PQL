@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Data;
 using System.Data.Common;
-using System.IO;
 using System.Reflection;
 
 namespace Pql.ClientDriver
@@ -168,7 +166,7 @@ namespace Pql.ClientDriver
             for (var index = 1; index < ParameterName.Length; index++)
             {
                 var c = ParameterName[index];
-                if (!Char.IsLetterOrDigit(c))
+                if (!char.IsLetterOrDigit(c))
                 {
                     throw new DataException("After initial '@', ParameterName can only have letters and digits: " + ParameterName);
                 }
@@ -192,6 +190,7 @@ namespace Pql.ClientDriver
                     {
                         throw new DataException("Parameter value cannot be a multidimensional array");
                     }
+
                     vtype = vtype.GetElementType();
                     IsValidatedCollection = true;
                 }
@@ -290,6 +289,7 @@ namespace Pql.ClientDriver
                             RowData.Write7BitEncodedInt(writer, data[i]);
                         }
                     }
+
                     break;
 
                 case DbType.Binary:
@@ -303,10 +303,11 @@ namespace Pql.ClientDriver
                             writer.Write(data, 0, data.Length);
                         }
                     }
+
                     break;
 
                 case DbType.Byte:
-                    writer.Write((Byte) value);
+                    writer.Write((byte) value);
                     break;
 
                 case DbType.Boolean:
@@ -325,11 +326,11 @@ namespace Pql.ClientDriver
 
                 case DbType.Currency:
                 case DbType.Decimal:
-                    writer.Write((Decimal) value);
+                    writer.Write((decimal) value);
                     break;
 
                 case DbType.Double:
-                    writer.Write((Double) value);
+                    writer.Write((double) value);
                     break;
 
                 case DbType.Guid:
@@ -338,38 +339,39 @@ namespace Pql.ClientDriver
                         writer.Write(curr.Lo);
                         writer.Write(curr.Hi);
                     }
+
                     break;
 
                 case DbType.Int16:
-                    writer.Write((Int16) value);
+                    writer.Write((short) value);
                     break;
 
                 case DbType.Int32:
-                    writer.Write((Int32) value);
+                    writer.Write((int) value);
                     break;
 
                 case DbType.Int64:
-                    writer.Write((Int64) value);
+                    writer.Write((long) value);
                     break;
 
                 case DbType.SByte:
-                    writer.Write((SByte) value);
+                    writer.Write((sbyte) value);
                     break;
 
                 case DbType.Single:
-                    writer.Write((Single)value);
+                    writer.Write((float)value);
                     break;
 
                 case DbType.UInt16:
-                    writer.Write((UInt16) value);
+                    writer.Write((ushort) value);
                     break;
 
                 case DbType.UInt32:
-                    writer.Write((UInt32) value);
+                    writer.Write((uint) value);
                     break;
 
                 case DbType.UInt64:
-                    writer.Write((UInt64) value);
+                    writer.Write((ulong) value);
                     break;
 
 
@@ -379,6 +381,7 @@ namespace Pql.ClientDriver
                         writer.Write(curr.Lo);
                         writer.Write(curr.Hi);
                     }
+
                     break;
 
                 default:
@@ -432,7 +435,7 @@ namespace Pql.ClientDriver
                 case DbType.Byte:
                     return (writer, untyped) =>
                     {
-                        var typed = (IEnumerator<Byte>)untyped;
+                        var typed = (IEnumerator<byte>)untyped;
                         while (typed.MoveNext())
                         {
                             writer.Write(typed.Current);
@@ -442,7 +445,7 @@ namespace Pql.ClientDriver
                 case DbType.Boolean:
                     return (writer, untyped) =>
                     {
-                        var typed = (IEnumerator<Boolean>)untyped;
+                        var typed = (IEnumerator<bool>)untyped;
                         while (typed.MoveNext())
                         {
                             writer.Write(typed.Current);
@@ -475,7 +478,7 @@ namespace Pql.ClientDriver
                 case DbType.Decimal:
                     return (writer, untyped) =>
                     {
-                        var typed = (IEnumerator<Decimal>)untyped;
+                        var typed = (IEnumerator<decimal>)untyped;
                         while (typed.MoveNext())
                         {
                             writer.Write(typed.Current);
@@ -485,7 +488,7 @@ namespace Pql.ClientDriver
                 case DbType.Double:
                     return (writer, untyped) =>
                     {
-                        var typed = (IEnumerator<Double>)untyped;
+                        var typed = (IEnumerator<double>)untyped;
                         while (typed.MoveNext())
                         {
                             writer.Write(typed.Current);
@@ -508,7 +511,7 @@ namespace Pql.ClientDriver
                 case DbType.Int16:
                     return (writer, untyped) =>
                     {
-                        var typed = (IEnumerator<Int16>)untyped;
+                        var typed = (IEnumerator<short>)untyped;
                         while (typed.MoveNext())
                         {
                             writer.Write(typed.Current);
@@ -518,7 +521,7 @@ namespace Pql.ClientDriver
                 case DbType.Int32:
                     return (writer, untyped) =>
                     {
-                        var typed = (IEnumerator<Int32>)untyped;
+                        var typed = (IEnumerator<int>)untyped;
                         while (typed.MoveNext())
                         {
                             writer.Write(typed.Current);
@@ -528,7 +531,7 @@ namespace Pql.ClientDriver
                 case DbType.Int64:
                     return (writer, untyped) =>
                     {
-                        var typed = (IEnumerator<Int64>)untyped;
+                        var typed = (IEnumerator<long>)untyped;
                         while (typed.MoveNext())
                         {
                             writer.Write(typed.Current);
@@ -538,7 +541,7 @@ namespace Pql.ClientDriver
                 case DbType.SByte:
                     return (writer, untyped) =>
                     {
-                        var typed = (IEnumerator<SByte>)untyped;
+                        var typed = (IEnumerator<sbyte>)untyped;
                         while (typed.MoveNext())
                         {
                             writer.Write(typed.Current);
@@ -548,7 +551,7 @@ namespace Pql.ClientDriver
                 case DbType.Single:
                     return (writer, untyped) =>
                     {
-                        var typed = (IEnumerator<Single>)untyped;
+                        var typed = (IEnumerator<float>)untyped;
                         while (typed.MoveNext())
                         {
                             writer.Write(typed.Current);
@@ -558,7 +561,7 @@ namespace Pql.ClientDriver
                 case DbType.UInt16:
                     return (writer, untyped) =>
                     {
-                        var typed = (IEnumerator<UInt16>)untyped;
+                        var typed = (IEnumerator<ushort>)untyped;
                         while (typed.MoveNext())
                         {
                             writer.Write(typed.Current);
@@ -568,7 +571,7 @@ namespace Pql.ClientDriver
                 case DbType.UInt32:
                     return (writer, untyped) =>
                     {
-                        var typed = (IEnumerator<UInt32>)untyped;
+                        var typed = (IEnumerator<uint>)untyped;
                         while (typed.MoveNext())
                         {
                             writer.Write(typed.Current);
@@ -578,7 +581,7 @@ namespace Pql.ClientDriver
                 case DbType.UInt64:
                     return (writer, untyped) =>
                     {
-                        var typed = (IEnumerator<UInt64>)untyped;
+                        var typed = (IEnumerator<ulong>)untyped;
                         while (typed.MoveNext())
                         {
                             writer.Write(typed.Current);

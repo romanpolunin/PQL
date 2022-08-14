@@ -1,7 +1,6 @@
-﻿using System;
-using Pql.Engine.Interfaces.Internal;
+﻿using Pql.SqlEngine.Interfaces.Internal;
 
-namespace Pql.Engine.Interfaces.Services
+namespace Pql.SqlEngine.Interfaces.Services
 {
     /// <summary>
     /// A contract for data enumerator that puts every row into an instance of <see cref="DriverRowData"/>.

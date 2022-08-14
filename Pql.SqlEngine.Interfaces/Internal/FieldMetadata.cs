@@ -1,57 +1,55 @@
-﻿using System;
-using System.Data;
-using System.Runtime.Serialization;
+﻿using System.Data;
+using System.Text.Json.Serialization;
 
-namespace Pql.Engine.Interfaces.Internal
+namespace Pql.SqlEngine.Interfaces.Internal
 {
     /// <summary>
     /// Logical definition of a single attribute of some entity.
     /// </summary>
-    [DataContract]
     public sealed class FieldMetadata
     {
         /// <summary>
         /// Internal identifier of the field.
         /// </summary>
-        [DataMember]
+        [JsonInclude]
         public int FieldId;
 
         /// <summary>
         /// Name.
         /// </summary>
-        [DataMember]
+        [JsonInclude]
         public string Name;
         
         /// <summary>
         /// Label.
         /// </summary>
-        [DataMember]
+        [JsonInclude]
         public string DisplayName;
         
         /// <summary>
         /// Data type.
         /// </summary>
-        [DataMember]
+        [JsonInclude]
         public DbType DbType;
 
         /// <summary>
         /// Reference to owner entity.
         /// </summary>
-        [DataMember]
+        [JsonInclude]
         public int OwnerDocumentType;
 
         /// <summary>
         /// Full name (not assembly-qualified, namespace only) type name that is supposed to be serialized into this binary field.
         /// Only meaningful with fields of type DbType.Object or DbType.Binary.
         /// </summary>
-        [DataMember]
-        public string SerializationTypeName;
+        [JsonInclude]
+        public string? SerializationTypeName;
 
         /// <summary>
         /// Dynamically determined actual serialization type. See <see cref="SerializationTypeName"/>.
         /// </summary>
-        [IgnoreDataMember]
-        public Type SerializationType;
+        [JsonIgnore]
+        public Type? SerializationType;
 
         private FieldMetadata()
         {

@@ -1,27 +1,26 @@
-﻿using System;
-using System.Runtime.CompilerServices;
-using System.Text;
-using Pql.ClientDriver.Protocol;
-using Pql.Engine.Interfaces.Internal;
-using Pql.Engine.Interfaces.Services;
+﻿using System.Text;
 
-namespace Pql.Engine.DataContainer.Engine
+using Pql.SqlEngine.Interfaces;
+using Pql.SqlEngine.Interfaces.Internal;
+using Pql.SqlEngine.Interfaces.Services;
+
+namespace Pql.SqlEngine.DataContainer.Engine
 {
     internal class SourcedEnumerator : IDriverDataEnumerator
     {
-        private int m_position = -1;
-        private readonly DriverRowData.DataTypeRepresentation m_pkFieldType;
+        private int _position = -1;
+        private readonly DriverRowData.DataTypeRepresentation _pkFieldType;
 
         public SourcedEnumerator(DriverRowData.DataTypeRepresentation pkFieldType)
         {
-            m_pkFieldType = pkFieldType;
+            _pkFieldType = pkFieldType;
         }
 
         public bool MoveNext()
         {
-            if (m_position == -1)
+            if (_position == -1)
             {
-                m_position++;
+                _position++;
                 return true;
             }
             
@@ -38,9 +37,9 @@ namespace Pql.Engine.DataContainer.Engine
             
         }
 
-        public DriverRowData Current { get { throw new NotSupportedException(); } }
+        public DriverRowData Current => throw new NotSupportedException();
 
-        
+
         public void FetchInternalEntityIdIntoChangeBuffer(DriverChangeBuffer changeBuffer, RequestExecutionContext context)
         {
             if (changeBuffer.InternalEntityId == null)
@@ -61,12 +60,12 @@ namespace Pql.Engine.DataContainer.Engine
             var indexInArray = changeBuffer.Data.FieldArrayIndexes[0];
             var internalEntityId = changeBuffer.InternalEntityId;
 
-            switch (m_pkFieldType)
+            switch (_pkFieldType)
             {
                 case DriverRowData.DataTypeRepresentation.ByteArray:
                     {
                         var value = changeBuffer.Data.BinaryData[indexInArray];
-                        if (value.Length == 0 || value.Length > byte.MaxValue)
+                        if (value.Length is 0 or > byte.MaxValue)
                         {
                             throw new Exception("Primary key length must be within 1 to 255 bytes");
                         }
@@ -78,13 +77,13 @@ namespace Pql.Engine.DataContainer.Engine
                 case DriverRowData.DataTypeRepresentation.String:
                     {
                         var value = changeBuffer.Data.StringData[indexInArray];
-                        if (value.Length == 0 || value.Length > byte.MaxValue)
+                        if (value.Length is 0 or > byte.MaxValue)
                         {
                             throw new Exception("Primary key length must be within 1 to 255 characters");
                         }
 
                         var bytelen = Encoding.UTF8.GetByteCount(value);
-                        if (bytelen == 0 || bytelen > byte.MaxValue)
+                        if (bytelen is 0 or > byte.MaxValue)
                         {
                             throw new Exception("UTF conversion must produce from 1 to 255 bytes");
                         }
@@ -106,7 +105,7 @@ namespace Pql.Engine.DataContainer.Engine
                     break;
                 case DriverRowData.DataTypeRepresentation.Value16Bytes:
                     {
-                        var value = (UInt64)changeBuffer.Data.ValueData16Bytes[indexInArray].Lo;
+                        var value = (ulong)changeBuffer.Data.ValueData16Bytes[indexInArray].Lo;
                         var pos = 1;
                         while (value > 0)
                         {
@@ -114,7 +113,7 @@ namespace Pql.Engine.DataContainer.Engine
                             value >>= 8;
                             pos++;
                         }
-                        value = (UInt64)changeBuffer.Data.ValueData16Bytes[indexInArray].Hi;
+                        value = (ulong)changeBuffer.Data.ValueData16Bytes[indexInArray].Hi;
                         while (value > 0)
                         {
                             internalEntityId[pos] = (byte)value;

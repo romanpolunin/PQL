@@ -77,10 +77,7 @@ namespace Pql.ClientDriver
         /// <returns>
         /// A <see cref="T:System.Data.Common.DbParameter"/> object.
         /// </returns>
-        protected override DbParameter CreateDbParameter()
-        {
-            return new PqlDataCommandParameter();
-        }
+        protected override DbParameter CreateDbParameter() => new PqlDataCommandParameter();
 
         /// <summary>
         /// Executes the command text against the connection.
@@ -119,10 +116,7 @@ namespace Pql.ClientDriver
         /// <exception cref="ArgumentNullException"><paramref name="fieldNames"/> cannot be null</exception>
         /// <exception cref="ArgumentNullException"><paramref name="entityName"/> cannot be null</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="argCount"/> has invalid value</exception>
-        public int BulkInsert(string entityName, string[] fieldNames, int argCount, IEnumerable<RowData> bulkArgs)
-        {
-            return ExecuteNonQuery(StatementType.Insert, entityName, fieldNames, argCount, bulkArgs);
-        }
+        public int BulkInsert(string entityName, string[] fieldNames, int argCount, IEnumerable<RowData> bulkArgs) => ExecuteNonQuery(StatementType.Insert, entityName, fieldNames, argCount, bulkArgs);
 
         /// <summary>
         /// Overload of <see cref="IDbCommand.ExecuteNonQuery"/> for bulk operations.
@@ -137,10 +131,7 @@ namespace Pql.ClientDriver
         /// <exception cref="ArgumentNullException"><paramref name="fieldNames"/> cannot be null</exception>
         /// <exception cref="ArgumentNullException"><paramref name="entityName"/> cannot be null</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="argCount"/> has invalid value</exception>
-        public int BulkUpdate(string entityName, string[] fieldNames, int argCount, IEnumerable<RowData> requestBulk)
-        {
-            return ExecuteNonQuery(StatementType.Update, entityName, fieldNames, argCount, requestBulk);
-        }
+        public int BulkUpdate(string entityName, string[] fieldNames, int argCount, IEnumerable<RowData> requestBulk) => ExecuteNonQuery(StatementType.Update, entityName, fieldNames, argCount, requestBulk);
 
         private int ExecuteNonQuery(StatementType statementType, string entityName, string[] fieldNames, int argCount, IEnumerable<RowData> requestBulk)
         {
@@ -349,8 +340,8 @@ namespace Pql.ClientDriver
         /// </returns>
         protected override DbConnection DbConnection
         {
-            get { return _connection; }
-            set { _connection = (PqlDataConnection)value; }
+            get => _connection;
+            set => _connection = (PqlDataConnection)value;
         }
 
         /// <summary>
@@ -359,10 +350,7 @@ namespace Pql.ClientDriver
         /// <returns>
         /// The parameters of the SQL statement or stored procedure.
         /// </returns>
-        protected override DbParameterCollection DbParameterCollection
-        {
-            get { return _parameters; }
-        }
+        protected override DbParameterCollection DbParameterCollection => _parameters;
 
         /// <summary>
         /// Gets or sets the <see cref="P:System.Data.Common.DbCommand.DbTransaction"/> within which this <see cref="T:System.Data.Common.DbCommand"/> object executes.
@@ -370,7 +358,7 @@ namespace Pql.ClientDriver
         /// <returns>
         /// The transaction within which a Command object of a .NET Framework data provider executes. The default value is a null reference (Nothing in Visual Basic).
         /// </returns>
-        protected override DbTransaction DbTransaction { get { return null; } set { } }
+        protected override DbTransaction DbTransaction { get => null; set { } }
 
         /// <summary>
         /// Gets or sets a value indicating whether the command object should be visible in a customized interface control.
@@ -408,13 +396,14 @@ namespace Pql.ClientDriver
         /// <filterpriority>2</filterpriority>
         public override CommandType CommandType
         {
-            get { return _commandType; }
+            get => _commandType;
             set
             {
                 if (value != CommandType.Text)
                 {
                     throw new ArgumentOutOfRangeException(nameof(value), value, "Only text commands are supported at this time");
                 }
+
                 _commandType = value;
             }
         }
@@ -428,7 +417,7 @@ namespace Pql.ClientDriver
         /// <exception cref="T:System.ArgumentException">The value entered was not one of the <see cref="T:System.Data.UpdateRowSource"/> values. </exception><filterpriority>2</filterpriority>
         public override UpdateRowSource UpdatedRowSource
         {
-            get { return UpdateRowSource.None; }
+            get => UpdateRowSource.None;
             set { }
         }
     }

@@ -34,10 +34,7 @@
         /// <summary>
         /// Writes data to output stream.
         /// </summary>
-        public void WriteTo(Stream stream)
-        {
-            throw new NotImplementedException();
-            /*
+        public void WriteTo(Stream stream) => throw new NotImplementedException();/*
             var dataResponse = new DataResponse(_errorCode, _exception == null ? "Unknown error" : _exception.Message);
 
             if (_writeBlockHeaderAndStreamEnd)
@@ -55,6 +52,5 @@
             {
                 Serializer.SerializeWithLengthPrefix(stream, dataResponse, PrefixStyle.Base128);
             }*/
-        }
     }
 }

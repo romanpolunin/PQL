@@ -116,25 +116,25 @@ namespace Pql.ClientDriver
         /// Returns integral value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-        public Int64 GetInt64(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsInt64 : 0;
+        public long GetInt64(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsInt64 : 0;
 
         /// <summary>
         /// Returns integral value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-        public Int32 GetInt32(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsInt32 : 0;
+        public int GetInt32(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsInt32 : 0;
 
         /// <summary>
         /// Returns integral value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-        public Int16 GetInt16(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsInt16 : (Int16)0;
+        public short GetInt16(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsInt16 : (short)0;
 
         /// <summary>
         /// Returns integral value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-        public Byte GetByte(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsByte : (Byte)0;
+        public byte GetByte(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsByte : (byte)0;
 
         /// <summary>
         /// Returns integral value for the give field's ordinal, or default/null value if it is marked as null in response.
@@ -252,7 +252,7 @@ namespace Pql.ClientDriver
         /// Returns floating point value for the give field's ordinal, or default/null value if it is marked as null in response.
         /// </summary>
         /// <param name="indexInResponse">Field's ordinal</param>
-        public Single GetSingle(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsSingle : 0;
+        public float GetSingle(int indexInResponse) => BitVector.Get(NotNulls, indexInResponse) ? ValueData8Bytes[FieldArrayIndexes[indexInResponse]].AsSingle : 0;
 
         /// <summary>
         /// Returns floating point value for the give field's ordinal, or default/null value if it is marked as null in response.
@@ -435,9 +435,11 @@ namespace Pql.ClientDriver
                                 {
                                     throw new DataException("Unexpected end of stream");
                                 }
+
                                 bytesRead += count;
                             }
                         }
+
                         break;
                     case DbType.SByte:
                     case DbType.Byte:
@@ -485,6 +487,7 @@ namespace Pql.ClientDriver
                                 data.Data[i] = (char)Read7BitEncodedInt(reader);
                             }
                         }
+
                         break;
 
                     case DbType.VarNumeric:
@@ -523,6 +526,7 @@ namespace Pql.ClientDriver
                                 writer.Write(data.Data, 0, data.Length);
                             }
                         }
+
                         break;
                     case DbType.SByte:
                     case DbType.Byte:
@@ -569,6 +573,7 @@ namespace Pql.ClientDriver
                                 Write7BitEncodedInt(writer, data.Data[i]);
                             }
                         }
+
                         break;
 
                     case DbType.VarNumeric:
@@ -642,32 +647,32 @@ namespace Pql.ClientDriver
             //FieldTypes.Add(DbType.VarNumeric, null);
             s_fieldTypeToNativeType = new Dictionary<DbType, Type>
                 {
-                    {DbType.AnsiString, typeof (String)},
-                    {DbType.AnsiStringFixedLength, typeof (String)},
-                    {DbType.Binary, typeof (Byte[])},
-                    {DbType.Object, typeof (Byte[])},
-                    {DbType.Boolean, typeof (Boolean)},
-                    {DbType.Byte, typeof (Byte)},
-                    {DbType.Currency, typeof (Decimal)},
+                    {DbType.AnsiString, typeof (string)},
+                    {DbType.AnsiStringFixedLength, typeof (string)},
+                    {DbType.Binary, typeof (byte[])},
+                    {DbType.Object, typeof (byte[])},
+                    {DbType.Boolean, typeof (bool)},
+                    {DbType.Byte, typeof (byte)},
+                    {DbType.Currency, typeof (decimal)},
                     {DbType.Date, typeof (DateTime)},
                     {DbType.DateTime, typeof (DateTime)},
                     {DbType.DateTime2, typeof (DateTime)},
                     {DbType.DateTimeOffset, typeof (DateTimeOffset)},
-                    {DbType.Decimal, typeof (Decimal)},
-                    {DbType.Double, typeof (Double)},
+                    {DbType.Decimal, typeof (decimal)},
+                    {DbType.Double, typeof (double)},
                     {DbType.Guid, typeof (Guid)},
-                    {DbType.Int16, typeof (Int16)},
-                    {DbType.Int32, typeof (Int32)},
-                    {DbType.Int64, typeof (Int64)},
-                    {DbType.SByte, typeof (SByte)},
-                    {DbType.Single, typeof (Single)},
-                    {DbType.String, typeof (String)},
-                    {DbType.StringFixedLength, typeof (String)},
+                    {DbType.Int16, typeof (short)},
+                    {DbType.Int32, typeof (int)},
+                    {DbType.Int64, typeof (long)},
+                    {DbType.SByte, typeof (sbyte)},
+                    {DbType.Single, typeof (float)},
+                    {DbType.String, typeof (string)},
+                    {DbType.StringFixedLength, typeof (string)},
                     {DbType.Time, typeof (TimeSpan)},
-                    {DbType.UInt16, typeof (UInt16)},
-                    {DbType.UInt32, typeof (UInt32)},
-                    {DbType.UInt64, typeof (UInt64)},
-                    {DbType.Xml, typeof (String)}
+                    {DbType.UInt16, typeof (ushort)},
+                    {DbType.UInt32, typeof (uint)},
+                    {DbType.UInt64, typeof (ulong)},
+                    {DbType.Xml, typeof (string)}
                 };
         }
 
@@ -681,11 +686,12 @@ namespace Pql.ClientDriver
             while (num2 != 35)
             {
                 byte num3 = reader.ReadByte();
-                num1 |= ((int)num3 & (int)sbyte.MaxValue) << num2;
+                num1 |= (num3 & sbyte.MaxValue) << num2;
                 num2 += 7;
-                if (((int)num3 & 128) == 0)
+                if ((num3 & 128) == 0)
                     return num1;
             }
+
             throw new FormatException("Bad 7Bit-encoded Int32");
         }
 
@@ -700,6 +706,7 @@ namespace Pql.ClientDriver
                 writer.Write((byte)(num | 128U));
                 num >>= 7;
             }
+
             writer.Write((byte)num);
         }
 
@@ -736,67 +743,67 @@ namespace Pql.ClientDriver
             /// Boolean value.
             /// </summary>
             [FieldOffset(0)]
-            public Boolean AsBoolean;
+            public bool AsBoolean;
 
             /// <summary>
             /// Byte value.
             /// </summary>
             [FieldOffset(0)]
-            public Byte AsByte;
+            public byte AsByte;
 
             /// <summary>
             /// signed byte value.
             /// </summary>
             [FieldOffset(0)]
-            public SByte AsSByte;
+            public sbyte AsSByte;
 
             /// <summary>
             /// Int64 value.
             /// </summary>
             [FieldOffset(0)]
-            public Int64 AsInt64;
+            public long AsInt64;
 
             /// <summary>
             /// Unsigned Int64 value.
             /// </summary>
             [FieldOffset(0)]
-            public UInt64 AsUInt64;
+            public ulong AsUInt64;
 
             /// <summary>
             /// Int16 value.
             /// </summary>
             [FieldOffset(0)]
-            public Int16 AsInt16;
+            public short AsInt16;
 
             /// <summary>
             /// Unsigned Int16 value.
             /// </summary>
             [FieldOffset(0)]
-            public UInt16 AsUInt16;
+            public ushort AsUInt16;
 
             /// <summary>
             /// Int32 value.
             /// </summary>
             [FieldOffset(0)]
-            public Int32 AsInt32;
+            public int AsInt32;
 
             /// <summary>
             /// Unsigned Int32 value.
             /// </summary>
             [FieldOffset(0)]
-            public UInt32 AsUInt32;
+            public uint AsUInt32;
 
             /// <summary>
             /// Double (64bit) floating point value.
             /// </summary>
             [FieldOffset(0)]
-            public Double AsDouble;
+            public double AsDouble;
 
             /// <summary>
             /// Single (32bit) floating point value.
             /// </summary>
             [FieldOffset(0)]
-            public Single AsSingle;
+            public float AsSingle;
 
             /// <summary>
             /// DateTime (64bit) value.
@@ -821,19 +828,19 @@ namespace Pql.ClientDriver
             /// Raw data.
             /// </summary>
             [FieldOffset(0)]
-            public Int64 Lo;
+            public long Lo;
 
             /// <summary>
             /// Raw data.
             /// </summary>
             [FieldOffset(8)]
-            public Int64 Hi;
+            public long Hi;
 
             /// <summary>
             /// Decimal-currency (128bit) value.
             /// </summary>
             [FieldOffset(0)]
-            public Decimal AsDecimal;
+            public decimal AsDecimal;
 
             /// <summary>
             /// Guid (128bit) value.

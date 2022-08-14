@@ -20,9 +20,6 @@ namespace Pql.ExpressionEngine.Utilities
             s_method = method;
         }
 
-        public static void Reset(this Parser parser)
-        {
-            s_method.Invoke(parser, null);
-        }
+        public static void Reset(this Parser parser) => s_method.Invoke(parser, null);
     }
 }

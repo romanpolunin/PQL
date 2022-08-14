@@ -1,4 +1,4 @@
-﻿namespace Pql.Engine.Interfaces.Services
+﻿namespace Pql.SqlEngine.Interfaces.Services
 {
     public enum DataContainerMode
     {

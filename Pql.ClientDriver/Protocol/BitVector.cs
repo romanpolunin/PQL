@@ -1,9 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Threading;
-
-namespace Pql.ClientDriver.Protocol
+﻿namespace Pql.ClientDriver.Protocol
 {
     /// <summary>
     /// Bitvector implementation.
@@ -13,7 +8,7 @@ namespace Pql.ClientDriver.Protocol
         /// <summary>
         /// Number of bits per Int32.
         /// </summary>
-        private const int BitsPerInt32 = sizeof(Int32) * 8;
+        private const int BitsPerInt32 = sizeof(int) * 8;
 
         /// <summary>
         /// Bit accessor.
@@ -127,7 +122,7 @@ namespace Pql.ClientDriver.Protocol
         /// Computes length of Int32 array needed to store N bits.
         /// </summary>
         /// <param name="n">Number of bits</param>        
-        public static Int32 GetArrayLength(Int32 n) => n <= 0 ? 0 : ((n - 1) / BitsPerInt32) + 1;
+        public static int GetArrayLength(int n) => n <= 0 ? 0 : ((n - 1) / BitsPerInt32) + 1;
 
         /// <summary>
         /// Writes bitvector data to stream.

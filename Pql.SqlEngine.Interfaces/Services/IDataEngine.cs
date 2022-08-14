@@ -1,7 +1,6 @@
-﻿using System;
-using Pql.Engine.Interfaces.Internal;
+﻿using Pql.SqlEngine.Interfaces.Internal;
 
-namespace Pql.Engine.Interfaces.Services
+namespace Pql.SqlEngine.Interfaces.Services
 {
     /// <summary>
     /// Contract for query processing engine.

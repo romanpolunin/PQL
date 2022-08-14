@@ -92,9 +92,6 @@ namespace Pql.ClientDriver
         /// Verifies consistency.
         /// </summary>
         [Conditional("DEBUG")]
-        private void AssertState()
-        {
-            Debug.Assert((Data == null && Length == 0) || (Data != null && Data.Length >= Length));
-        }
+        private void AssertState() => Debug.Assert((Data == null && Length == 0) || (Data != null && Data.Length >= Length));
     }
 }

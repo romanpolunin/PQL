@@ -1,12 +1,14 @@
 ﻿using Grpc.Core;
 
+using Pql.Server.Protocol.Wire;
+
 namespace Pql.Server
 {
-    public class PqlService : Pql.Server.Protocol.Wire.PqlService.PqlServiceBase
+    public class PqlService : Protocol.Wire.PqlService.PqlServiceBase
     {
-        public override Task Request(IAsyncStreamReader<Protocol.Wire.PqlRequestItem> requestStream, IServerStreamWriter<Protocol.Wire.PqlResponseItem> responseStream, ServerCallContext context)
-        {
-            return Task.CompletedTask;
-        }
+        public override Task Request(
+            IAsyncStreamReader<PqlRequestItem> requestStream, 
+            IServerStreamWriter<PqlResponseItem> responseStream, 
+            ServerCallContext context) => Task.CompletedTask;
     }
 }

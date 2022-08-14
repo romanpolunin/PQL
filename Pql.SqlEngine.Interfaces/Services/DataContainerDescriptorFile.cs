@@ -1,15 +1,14 @@
-﻿using System;
-using System.Runtime.Serialization;
-using Pql.Engine.Interfaces.Internal;
+﻿using System.Text.Json.Serialization;
 
-namespace Pql.Engine.Interfaces.Services
+using Pql.SqlEngine.Interfaces.Internal;
+
+namespace Pql.SqlEngine.Interfaces.Services
 {
-    [DataContract]
     public struct DataContainerDescriptorFile
     {
-        [DataMember]
+        [JsonInclude]
         public readonly string DriverVersion;
-        [DataMember]
+        [JsonInclude]
         public readonly DataContainerDescriptor DataContainerDescriptor;
 
         public DataContainerDescriptorFile(Version version, DataContainerDescriptor descriptor)
