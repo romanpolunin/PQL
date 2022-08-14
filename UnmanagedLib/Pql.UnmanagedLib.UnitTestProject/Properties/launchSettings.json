@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Pql.UnmanagedLib.UnitTestProject": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
