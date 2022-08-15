@@ -3,7 +3,7 @@ using Pql.SqlEngine.Interfaces.Services;
 
 namespace Pql.SqlEngine.DataContainer.RamDriver
 {
-    internal class DocumentDataContainerEnumerator_BulkPkScan : DocumentDataContainerEnumeratorBase
+    internal class DocumentDataContainerEnumerator_BulkPkScan : ADocumentDataContainerEnumeratorBase
     {
         private readonly IDriverDataEnumerator _inputEnumerator;
 

@@ -2,7 +2,7 @@
 
 namespace Pql.SqlEngine.DataContainer.RamDriver
 {
-    internal sealed class DocumentDataContainerEnumerator_IndexScan : DocumentDataContainerEnumeratorBase
+    internal sealed class DocumentDataContainerEnumerator_IndexScan : ADocumentDataContainerEnumeratorBase
     {
         private readonly SortIndex _sortIndex;
         private readonly bool _descending;

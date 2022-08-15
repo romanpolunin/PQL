@@ -10,4 +10,10 @@
     <ProjectReference Include="..\Pql.SqlEngine.Interfaces\Pql.SqlEngine.Interfaces.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Pql.UnmanagedLib">
+      <HintPath>..\3rdParty\Pql.UnmanagedLib\x64_release\Pql.UnmanagedLib.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

@@ -4,8 +4,6 @@ using Pql.ClientDriver.Protocol;
 
 namespace Pql.ClientDriver
 {
-    public class PqlMarshallerFactory: MarshallerFactory
-
     public struct Offsets
     {
         public short First16;

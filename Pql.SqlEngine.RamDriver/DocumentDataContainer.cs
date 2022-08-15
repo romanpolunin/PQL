@@ -4,6 +4,7 @@ using System.Diagnostics;
 using Pql.SqlEngine.Interfaces;
 using Pql.SqlEngine.Interfaces.Internal;
 using Pql.SqlEngine.Interfaces.Services;
+using Pql.UnmanagedLib;
 
 namespace Pql.SqlEngine.DataContainer.RamDriver
 {
@@ -15,14 +16,14 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
         private volatile int _capacity;
         private volatile bool _stateBroken;
 
-        public const int GrowthIncrement = 10000; 
+        public const int GrowthIncrement = 10000;
 
         public readonly DocumentTypeDescriptor DocDesc;
         public readonly DataContainerDescriptor DataContainerDescriptor;
         public ConcurrentHashmapOfKeys DocumentIdToIndex;
         public readonly SortIndexManager SortIndexManager;
         public readonly ReaderWriterLockSlim StructureLock;
-        
+
         /// <summary>
         /// All keys of documents, unordered. 
         /// Entries may be set to empty length for deleted documents.
@@ -39,7 +40,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
         /// However we don't know data types at compile time, so references are stored as objects and casted later.
         /// This deals with in-RAM representation only, persistent store is a separate task.
         /// </summary>
-        public readonly ColumnDataBase[] ColumnStores;
+        public readonly AColumnDataBase[] ColumnStores;
 
         /// <summary>
         /// Mapping from field ID to column store.
@@ -50,12 +51,12 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
         /// Identifier of the field that is the primary key on this document.
         /// </summary>
         public readonly int PrimaryKeyFieldId;
-        
+
         private string _docRootPath;
         private bool _disposed;
 
         public DocumentDataContainer(
-            DataContainerDescriptor dataContainerDescriptor, 
+            DataContainerDescriptor dataContainerDescriptor,
             DocumentTypeDescriptor documentTypeDescriptor,
             IUnmanagedAllocator allocator,
             ITracer tracer)
@@ -66,7 +67,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             DocDesc = documentTypeDescriptor ?? throw new ArgumentNullException(nameof(documentTypeDescriptor));
             DataContainerDescriptor = dataContainerDescriptor ?? throw new ArgumentNullException(nameof(dataContainerDescriptor));
 
-            ColumnStores = new ColumnDataBase[DocDesc.Fields.Length];
+            ColumnStores = new AColumnDataBase[DocDesc.Fields.Length];
             DocumentKeys = new ExpandableArrayOfKeys(_allocator);
             FieldIdToColumnStore = new Dictionary<int, int>(ColumnStores.Length * 2);
             PrimaryKeyFieldId = dataContainerDescriptor.RequireField(documentTypeDescriptor.DocumentType, documentTypeDescriptor.PrimaryKeyFieldName).FieldId;
@@ -84,14 +85,14 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             StructureLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         }
 
-        private static ColumnDataBase CreateColumnStore(DbType dbType, IUnmanagedAllocator allocator, ColumnDataBase migrated)
+        private static AColumnDataBase CreateColumnStore(DbType dbType, IUnmanagedAllocator allocator, AColumnDataBase migrated)
         {
             var dataType = DriverRowData.DeriveSystemType(dbType);
             var columnStoreType = typeof(ColumnData<>).MakeGenericType(dataType);
 
             return migrated == null
-                       ? (ColumnDataBase) Activator.CreateInstance(columnStoreType, dbType, allocator)
-                       : (ColumnDataBase) Activator.CreateInstance(columnStoreType, migrated, allocator);
+                       ? (AColumnDataBase)Activator.CreateInstance(columnStoreType, dbType, allocator)
+                       : (AColumnDataBase)Activator.CreateInstance(columnStoreType, migrated, allocator);
         }
 
         public IDriverDataEnumerator GetUnorderedEnumerator(
@@ -102,7 +103,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             {
                 return null;
             }
-            
+
             return new DocumentDataContainerEnumerator_FullScan(untrimmedCount, driverRow, this, fields, countOfMainFields);
         }
 
@@ -142,7 +143,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
                 OnUpdateValueDocumentsKeyIndex(index);
                 return;
             }
-            
+
             // make a copy of the key (so that we don't introduce dependency on caller's local variables) 
             // and reserve a new index value
             var newCount = Interlocked.Increment(ref _untrimmedDocumentCount);
@@ -265,7 +266,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
 
 
 
-        public ColumnDataBase RequireColumnStore(int fieldId)
+        public AColumnDataBase RequireColumnStore(int fieldId)
         {
             CheckState();
 
@@ -274,7 +275,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             return ColumnStores[index];
         }
 
-        
+
         public bool TryDeleteDocument(byte[] internalEntityId)
         {
             CheckState();
@@ -325,7 +326,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
                         }, TaskCreationOptions.LongRunning);
 
                 count++;
-                tasks[count] = tasks[count-1].ContinueWith(
+                tasks[count] = tasks[count - 1].ContinueWith(
                     prev =>
                         {
                             using var writer = new BinaryWriter(
@@ -435,7 +436,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
 
             if (_logger.IsInfoEnabled)
             {
-                _logger.InfoFormat("Loaded container structure for document {0}/{1} in {2} milliseconds. {3} columns, {4} rows.", 
+                _logger.InfoFormat("Loaded container structure for document {0}/{1} in {2} milliseconds. {3} columns, {4} rows.",
                     DocDesc.DocumentType, DocDesc.Name, timer.ElapsedMilliseconds, FieldIdToColumnStore.Count, _untrimmedDocumentCount);
             }
         }
@@ -566,7 +567,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
 
                 foreach (var c in ColumnStores)
                 {
-                    tasks.Add(new Task<ColumnDataBase>(o => CreateColumnStore(((ColumnDataBase)o).DbType, newpool, (ColumnDataBase)o), c));
+                    tasks.Add(new Task<AColumnDataBase>(o => CreateColumnStore(((AColumnDataBase)o).DbType, newpool, (AColumnDataBase)o), c));
                 }
 
                 foreach (var t in tasks)
@@ -576,10 +577,10 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
 
                 Task.WaitAll(tasks.ToArray());
 
-                var newvdb = ((Task<BitVector>) tasks[0]).Result;
-                var newdk = ((Task<ExpandableArrayOfKeys>) tasks[1]).Result;
+                var newvdb = ((Task<BitVector>)tasks[0]).Result;
+                var newdk = ((Task<ExpandableArrayOfKeys>)tasks[1]).Result;
                 var newditi = new ConcurrentHashmapOfKeys(DocumentIdToIndex, newdk, newpool);
-                
+
                 // now, since no exception was thrown, let's consume results and dispose of old structures
                 try
                 {
@@ -589,9 +590,9 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
 
                     for (var i = 2; i < tasks.Count; i++)
                     {
-                        ColumnStores[i-2] = ((Task<ColumnDataBase>)tasks[i]).Result;
+                        ColumnStores[i - 2] = ((Task<AColumnDataBase>)tasks[i]).Result;
                     }
-                    
+
                     vdb.Dispose();
                     dk.Dispose();
                     diti.Dispose();
@@ -621,7 +622,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             {
                 throw new InvalidOperationException("This DocumentDataContainer is marked broken because of previous failure");
             }
- 
+
             if (_disposed)
             {
                 throw new ObjectDisposedException("DocumentDataContainer is disposed");

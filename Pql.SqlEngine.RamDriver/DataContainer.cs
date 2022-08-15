@@ -1,6 +1,9 @@
-﻿using Pql.SqlEngine.Interfaces;
+﻿using System.Text.Json;
+
+using Pql.SqlEngine.Interfaces;
 using Pql.SqlEngine.Interfaces.Internal;
 using Pql.SqlEngine.Interfaces.Services;
+using Pql.UnmanagedLib;
 
 namespace Pql.SqlEngine.DataContainer.RamDriver
 {
@@ -45,7 +48,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
                 if (!_documentDataContainers.TryGetValue(docType, out docStore))
                 {
                     docStore = new DocumentDataContainer(
-                        _dataContainerDescriptor, 
+                        _dataContainerDescriptor,
                         _dataContainerDescriptor.RequireDocumentType(docType),
                         _memoryPool,
                         _tracer);
@@ -54,7 +57,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
                         var stats = ReadStatsFromStore(_storageRoot);
                         docStore.ReadDataFromStore(GetDocRootPath(_storageRoot, _dataContainerDescriptor.RequireDocumentType(docType)), stats.TryGetDocumentCount(docType));
                     }
-                    
+
                     _documentDataContainers.Add(docType, docStore);
                 }
 
@@ -68,7 +71,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             {
                 return;
             }
-            
+
             if (!Directory.Exists(_storageRoot))
             {
                 throw new ArgumentException("Storage root is invalid: " + _storageRoot);
@@ -132,12 +135,10 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             }
 
             Directory.CreateDirectory(storageRoot);
-            
+
             var file = new DataContainerStatsFile(RamDriverFactory.CurrentStoreVersion().ToString(), stats);
-            using var writer = new StreamWriter(
-                new FileStream(Path.Combine(storageRoot, "stats.json"), FileMode.Create, FileAccess.ReadWrite));
-            var serializer = new JsonSerializer();
-            serializer.Serialize(writer, file);
+            using var writer = new FileStream(Path.Combine(storageRoot, "stats.json"), FileMode.Create, FileAccess.ReadWrite);
+            JsonSerializer.Serialize(writer, file);
             writer.Flush();
         }
 
@@ -156,10 +157,8 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             Directory.CreateDirectory(storageRoot);
 
             var file = new DataContainerDescriptorFile(RamDriverFactory.CurrentStoreVersion(), descriptor);
-            using var writer = new StreamWriter(
-                new FileStream(Path.Combine(storageRoot, "descriptor.json"), FileMode.Create, FileAccess.ReadWrite));
-            var serializer = new JsonSerializer();
-            serializer.Serialize(writer, file);
+            using var writer = new FileStream(Path.Combine(storageRoot, "descriptor.json"), FileMode.Create, FileAccess.ReadWrite);
+            JsonSerializer.Serialize(writer, file);
             writer.Flush();
         }
 
@@ -261,7 +260,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
         private void RebuildUnmanagedData()
         {
             var newpool = new DynamicMemoryPool();
-            
+
             Action<object> action = x => ((DocumentDataContainer)x).MigrateRAM(newpool);
             var tasks = _documentDataContainers.Values.Select(x =>
                 {

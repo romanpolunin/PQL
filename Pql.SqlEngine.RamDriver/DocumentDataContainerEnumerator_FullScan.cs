@@ -2,7 +2,7 @@
 
 namespace Pql.SqlEngine.DataContainer.RamDriver
 {
-    internal sealed class DocumentDataContainerEnumerator_FullScan : DocumentDataContainerEnumeratorBase
+    internal sealed class DocumentDataContainerEnumerator_FullScan : ADocumentDataContainerEnumeratorBase
     {
         public override bool MoveNext()
         {

@@ -2,15 +2,15 @@
 using System.Linq.Expressions;
 
 using Pql.ExpressionEngine.Interfaces;
-using Pql.SqlEngine.Interfaces;
 using Pql.SqlEngine.Interfaces.Internal;
+using Pql.UnmanagedLib;
 
 namespace Pql.SqlEngine.DataContainer.RamDriver
 {
-    internal sealed class ColumnData<T> : ColumnDataBase
+    internal sealed class ColumnData<T> : AColumnDataBase
     {
         private readonly DbType _dbType;
-        
+
         public readonly ExpandableArray<T> DataArray;
         public override DbType DbType => _dbType;
 
@@ -19,17 +19,17 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
         {
             _dbType = dbType;
             DataArray = new ExpandableArray<T>(1, typeof(T).IsValueType ? DriverRowData.GetByteCount(dbType) : IntPtr.Size);
-            
+
             AssignFromDriverRow = GenerateAssignFromDriverRowAction();
             AssignToDriverRow = GenerateAssignToDriverRowAction();
             WriteData = GenerateWriteDataAction();
             ReadData = GenerateReadDataAction();
         }
 
-        public ColumnData(ColumnDataBase source, IUnmanagedAllocator allocator)
+        public ColumnData(AColumnDataBase source, IUnmanagedAllocator allocator)
             : base(source, allocator)
         {
-            var typed = (ColumnData<T>) source;
+            var typed = (ColumnData<T>)source;
 
             _dbType = typed.DbType;
             DataArray = typed.DataArray;
@@ -54,8 +54,8 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             // this should be verified by caller
 
             var docIndex = Expression.Parameter(typeof(int), "docIndex");
-            var rowData = Expression.Parameter(typeof (DriverRowData), "rowData");
-            var fieldArrayIndex = Expression.Parameter(typeof (int), "indexInArray");
+            var rowData = Expression.Parameter(typeof(DriverRowData), "rowData");
+            var fieldArrayIndex = Expression.Parameter(typeof(int), "indexInArray");
 
             var arrayData = Expression.Field(Expression.Constant(this), "DataArray");
             var dataBlock = Expression.Call(arrayData, "GetBlock", null, docIndex);
@@ -77,18 +77,18 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
                         Expression.Block(
                             Expression.Assign(target, Expression.New(typeof(SizableArrayOfByte))),
                             Expression.Call(
-                                typeof(Interlocked), "CompareExchange", new [] {typeof(SizableArrayOfByte)},
+                                typeof(Interlocked), "CompareExchange", new[] { typeof(SizableArrayOfByte) },
                                 Expression.ArrayIndex(dataBlock, localIndex), target, Expression.Constant(null, typeof(SizableArrayOfByte))))
                         );
 
                     source = Expression.ArrayIndex(Expression.Field(rowData, "BinaryData"), fieldArrayIndex);
-                    var copyFrom = typeof (SizableArrayOfByte).GetMethod("CopyFrom", new [] {typeof(SizableArrayOfByte)});
+                    var copyFrom = typeof(SizableArrayOfByte).GetMethod("CopyFrom", new[] { typeof(SizableArrayOfByte) });
                     var setter = Expression.Call(target, copyFrom, source);
-                    
+
                     assign = Expression.Block(
-                        new [] {target},
+                        new[] { target },
                         Expression.Assign(target, Expression.ArrayIndex(dataBlock, localIndex)),
-                        initIfNull, 
+                        initIfNull,
                         setter);
                     break;
                 case DriverRowData.DataTypeRepresentation.String:
@@ -110,7 +110,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             }
 
             var lambda = Expression.Lambda(
-                Expression.GetActionType(new [] {typeof (int), typeof(DriverRowData), typeof(int)}), 
+                Expression.GetActionType(new[] { typeof(int), typeof(DriverRowData), typeof(int) }),
                 assign, docIndex, rowData, fieldArrayIndex);
 
             return (Action<int, DriverRowData, int>)lambda.Compile();
@@ -121,9 +121,9 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             // NOTE: this method assumes that source value is NOT NULL
             // this should be verified by caller
 
-            var docIndex = Expression.Parameter(typeof (int), "docIndex");
-            var rowData = Expression.Parameter(typeof (DriverRowData), "rowData");
-            var fieldArrayIndex = Expression.Parameter(typeof (int), "indexInArray");
+            var docIndex = Expression.Parameter(typeof(int), "docIndex");
+            var rowData = Expression.Parameter(typeof(DriverRowData), "rowData");
+            var fieldArrayIndex = Expression.Parameter(typeof(int), "indexInArray");
 
             var arrayData = Expression.Field(Expression.Constant(this), "DataArray");
             var dataBlock = Expression.Call(arrayData, "GetBlock", null, docIndex);
@@ -170,28 +170,28 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
 
         private Action<BinaryWriter, int> GenerateWriteDataAction()
         {
-            var count = Expression.Parameter(typeof (int), "count");
-            var writer = Expression.Parameter(typeof (BinaryWriter), "writer");
-            
+            var count = Expression.Parameter(typeof(int), "count");
+            var writer = Expression.Parameter(typeof(BinaryWriter), "writer");
+
             var thisref = Expression.Constant(this);
-            var docIndex = Expression.Variable(typeof (int), "docIndex");
+            var docIndex = Expression.Variable(typeof(int), "docIndex");
             var arrayData = Expression.Field(Expression.Constant(this), "DataArray");
             var blockGet = Expression.Call(arrayData, "GetBlock", null, docIndex);
             var block = Expression.Variable(blockGet.Type, "block");
             var dataElement = Expression.ArrayAccess(block, Expression.Call(arrayData, "GetLocalIndex", null, docIndex));
 
             var notnulls = Expression.Field(thisref, "NotNulls");
-            var isnotnull = Expression.Call(notnulls, typeof (BitVector).GetMethod("Get", new [] {typeof(int)}), docIndex);
+            var isnotnull = Expression.Call(notnulls, typeof(BitVector).GetMethod("Get", new[] { typeof(int) }), docIndex);
 
             var writeItem = Expression.Block(
                 Expression.Assign(block, blockGet),
-                GenerateWriteItemExpression(typeof (T), dataElement, writer));
-            
+                GenerateWriteItemExpression(typeof(T), dataElement, writer));
+
             var breakLabel = Expression.Label("done");
             var body = Expression.Block(
                 new[] { block },
                 Expression.IfThen(
-                    Expression.GreaterThanOrEqual(docIndex, count), 
+                    Expression.GreaterThanOrEqual(docIndex, count),
                     Expression.Break(breakLabel)),
                 Expression.IfThen(isnotnull, writeItem),
                 Expression.PreIncrementAssign(docIndex)
@@ -200,7 +200,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
                 );
 
             var loop = Expression.Block(
-                new [] {docIndex},
+                new[] { docIndex },
                 Expression.Assign(docIndex, Expression.Constant(0, docIndex.Type)),
                 Expression.Loop(body, breakLabel))
                 ;
@@ -209,16 +209,16 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
                 Expression.GetActionType(new[] { typeof(BinaryWriter), typeof(int) }),
                 loop, writer, count);
 
-            return (Action<BinaryWriter, int>) lambda.Compile();
+            return (Action<BinaryWriter, int>)lambda.Compile();
         }
 
         private Action<BinaryReader, int> GenerateReadDataAction()
         {
-            var count = Expression.Parameter(typeof (int), "count");
-            var reader = Expression.Parameter(typeof (BinaryReader), "reader");
-            
+            var count = Expression.Parameter(typeof(int), "count");
+            var reader = Expression.Parameter(typeof(BinaryReader), "reader");
+
             var thisref = Expression.Constant(this);
-            var docIndex = Expression.Variable(typeof (int), "docIndex");
+            var docIndex = Expression.Variable(typeof(int), "docIndex");
             var arrayData = Expression.Field(Expression.Constant(this), "DataArray");
             var blockGet = Expression.Call(arrayData, "GetBlock", null, docIndex);
             var block = Expression.Variable(blockGet.Type, "block");
@@ -229,20 +229,20 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
 
             var readItem = Expression.Block(
                 Expression.Assign(block, blockGet),
-                GenerateReadItemExpression(typeof (T), dataElement, reader));
-            
+                GenerateReadItemExpression(typeof(T), dataElement, reader));
+
             var breakLabel = Expression.Label("done");
             var body = Expression.Block(
-                new []{block},
+                new[] { block },
                 Expression.IfThen(
-                    Expression.GreaterThanOrEqual(docIndex, count), 
+                    Expression.GreaterThanOrEqual(docIndex, count),
                     Expression.Break(breakLabel)),
                 Expression.IfThen(isnotnull, readItem),
                 Expression.PreIncrementAssign(docIndex)
                 );
 
             var loop = Expression.Block(
-                new[] {docIndex},
+                new[] { docIndex },
                 Expression.Assign(docIndex, Expression.Constant(0, docIndex.Type)),
                 Expression.Loop(body, breakLabel))
                 ;
@@ -253,7 +253,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
                 Expression.GetActionType(new[] { typeof(BinaryReader), typeof(int) }),
                 Expression.Block(createDataArray, loop), reader, count);
 
-            return (Action<BinaryReader, int>) lambda.Compile();
+            return (Action<BinaryReader, int>)lambda.Compile();
         }
 
         private Expression GenerateReadItemExpression(Type itemType, Expression dataElement, ParameterExpression reader)
@@ -286,8 +286,8 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             if (itemType.IsDateTimeOffset())
             {
                 var method = reader.Type.GetMethod("ReadInt64");
-                var ctr = itemType.GetConstructor(new[] {typeof (DateTime), typeof (TimeSpan)});
-                var timespanctr = typeof (TimeSpan).GetConstructor(new[] {typeof (long) });
+                var ctr = itemType.GetConstructor(new[] { typeof(DateTime), typeof(TimeSpan) });
+                var timespanctr = typeof(TimeSpan).GetConstructor(new[] { typeof(long) });
                 return Expression.Assign(dataElement, Expression.New(
                     ctr,
                     Expression.Call(typeof(DateTime), "FromBinary", null, Expression.Call(reader, method)),
@@ -362,7 +362,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
                 var buf = Expression.Variable(typeof(DriverRowData.ValueHolder16Bytes), "buf");
                 var method = writer.Type.GetMethod("Write", new[] { typeof(long) });
                 return Expression.Block(
-                    new [] {buf},
+                    new[] { buf },
                     Expression.Assign(Expression.Field(buf, "AsGuid"), dataElement),
                     Expression.Call(writer, method, Expression.Field(buf, "Lo")),
                     Expression.Call(writer, method, Expression.Field(buf, "Hi")));

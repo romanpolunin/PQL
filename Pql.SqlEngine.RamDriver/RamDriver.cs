@@ -338,11 +338,11 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
 
             var key = Interlocked.Increment(ref _lastChangesetHandle);
 
-            ColumnDataBase[] columnStores = null;
+            AColumnDataBase[] columnStores = null;
             var documentContainer = _dataContainer.RequireDocumentContainer(changeBuffer.TargetEntity);
             if (changeBuffer.Fields != null && changeBuffer.Fields.Length > 0)
             {
-                columnStores = new ColumnDataBase[changeBuffer.Fields.Length];
+                columnStores = new AColumnDataBase[changeBuffer.Fields.Length];
                 for (var i = 0; i < changeBuffer.Fields.Length; i++)
                 {
                     var field = changeBuffer.Fields[i];
@@ -648,14 +648,14 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
         public readonly RamDriver Driver;
         public readonly DriverChangeBuffer ChangeBuffer;
         public readonly bool IsBulk;
-        public readonly ColumnDataBase[] ColumnStores;
+        public readonly AColumnDataBase[] ColumnStores;
         public readonly DocumentDataContainer DocumentContainer;
         public int ChangeCount;
 
         /// <summary>
         /// Ctr.
         /// </summary>
-        public RamDriverChangeset(RamDriver driver, DriverChangeBuffer changeBuffer, bool isBulk, DocumentDataContainer documentContainer, ColumnDataBase[] columnStores)
+        public RamDriverChangeset(RamDriver driver, DriverChangeBuffer changeBuffer, bool isBulk, DocumentDataContainer documentContainer, AColumnDataBase[] columnStores)
         {
             Driver = driver ?? throw new ArgumentNullException(nameof(driver));
             ChangeBuffer = changeBuffer ?? throw new ArgumentNullException(nameof(changeBuffer));

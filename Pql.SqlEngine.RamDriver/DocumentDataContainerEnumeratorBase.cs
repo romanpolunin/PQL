@@ -4,7 +4,7 @@ using Pql.SqlEngine.Interfaces.Services;
 
 namespace Pql.SqlEngine.DataContainer.RamDriver
 {
-    internal abstract class DocumentDataContainerEnumeratorBase : IDriverDataEnumerator
+    internal abstract class ADocumentDataContainerEnumeratorBase : IDriverDataEnumerator
     {
         protected bool HaveData;
         protected int Position;
@@ -72,7 +72,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             changeBuffer.InternalEntityId = context.DriverOutputBuffer.InternalEntityId;
         }
 
-        protected DocumentDataContainerEnumeratorBase(
+        protected ADocumentDataContainerEnumeratorBase(
             int untrimmedCount, 
             DriverRowData rowData, 
             DocumentDataContainer dataContainer, 

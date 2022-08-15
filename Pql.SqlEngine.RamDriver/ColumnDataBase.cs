@@ -1,24 +1,24 @@
 ﻿using System.Data;
 
 using Pql.ExpressionEngine.Interfaces;
-using Pql.SqlEngine.Interfaces;
 using Pql.SqlEngine.Interfaces.Internal;
+using Pql.UnmanagedLib;
 
 namespace Pql.SqlEngine.DataContainer.RamDriver
 {
-    internal abstract class ColumnDataBase : IDisposable
+    internal abstract class AColumnDataBase : IDisposable
     {
         private volatile Task[] _dataLoaderTasks;
 
         public BitVector NotNulls;
         private bool _disposed;
 
-        protected ColumnDataBase(IUnmanagedAllocator allocator)
+        protected AColumnDataBase(IUnmanagedAllocator allocator)
         {
             NotNulls = new BitVector(allocator);
         }
 
-        protected ColumnDataBase(ColumnDataBase source, IUnmanagedAllocator allocator)
+        protected AColumnDataBase(AColumnDataBase source, IUnmanagedAllocator allocator)
         {
             // may throw due to insufficient memory
             NotNulls = new BitVector(source.NotNulls, allocator);
@@ -161,7 +161,7 @@ namespace Pql.SqlEngine.DataContainer.RamDriver
             }
         }
 
-        ~ColumnDataBase()
+        ~AColumnDataBase()
         {
             Dispose(false);
         }

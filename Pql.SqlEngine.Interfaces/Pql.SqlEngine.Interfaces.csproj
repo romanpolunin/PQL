@@ -24,4 +24,9 @@
     <ItemGroup>
         <Protobuf Include="Protocol\Pql.proto" GrpcServices="Server" />
     </ItemGroup>
+    <ItemGroup>
+      <Reference Include="Pql.UnmanagedLib">
+        <HintPath>..\3rdParty\Pql.UnmanagedLib\x64_release\Pql.UnmanagedLib.dll</HintPath>
+      </Reference>
+    </ItemGroup>
 </Project>
