@@ -14,7 +14,7 @@ namespace Pql.UnitTestProject
         {
             const ulong nThreads = 4;
             const ulong offset = 0;
-            const ulong count = 15000000;
+            const ulong count = 1500000;
 
             for (var loop = 0; loop < 200; loop++)
             {

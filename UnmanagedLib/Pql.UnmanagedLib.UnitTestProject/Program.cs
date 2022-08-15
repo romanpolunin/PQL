@@ -8,8 +8,8 @@ namespace Pql.UnitTestProject
         {
             //new TestBitVector().TestRandomValuesSetter();
             //new TestMemoryViewStream().Test();
-            //new TestConcurrentHashmapOfKeys().Test();
-            new TestConcurrentDictOfKeys().Test();
+            new TestConcurrentHashmapOfKeys().Test();
+            //new TestConcurrentDictOfKeys().Test();
         }
     }
 

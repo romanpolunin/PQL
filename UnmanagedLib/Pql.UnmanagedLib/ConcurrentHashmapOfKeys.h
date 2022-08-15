@@ -121,8 +121,13 @@ namespace Pql
                     }
                 }
             }
-
         public:
+
+            static int32_t ComputeHash(array<uint8_t>^ key)
+            {
+                pin_ptr<uint8_t> pdata = &key[0];
+                return std::_Hash_array_representation((uint8_t*)pdata+1, key[0]);
+            }
 
             ConcurrentHashmapOfKeys(IUnmanagedAllocator^ allocator)
             {
